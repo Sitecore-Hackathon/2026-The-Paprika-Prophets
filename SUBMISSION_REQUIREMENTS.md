@@ -26,3 +26,5 @@ The documentation requirements are extremely important. If the judges are unable
 - One to two pages of documentation describing your project submission purpose with screenshots of the finished product and installation steps with screenshots where appropriate.
 
 __Read and follow the instructions in__ [ENTRYFORM](ENTRYFORM.md)
+
+
