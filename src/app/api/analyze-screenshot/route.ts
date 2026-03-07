@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { rateLimit } from "@/lib/rate-limit";
+import { validateImageFile } from "@/lib/validation";
 
 const ANALYSIS_PROMPT = `You are a Sitecore XM Cloud expert analyzing a screenshot to identify components and propose template structures.
 
@@ -139,7 +141,23 @@ FINAL CHECKLIST before returning:
 □ visualLocation is descriptive enough to locate the component on the screenshot`;
 
 export async function POST(request: NextRequest) {
-  // Resolve OpenAI key: header (BYOK) → env fallback
+  /* ── Rate limiting ───────────────────────────────────────── */
+  const callerKey =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "anonymous";
+  const rl = rateLimit(`screenshot:${callerKey}`, 10, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) },
+      },
+    );
+  }
+
+  /* ── API key resolution ──────────────────────────────────── */
   const apiKey =
     request.headers.get("x-openai-key") || process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -157,11 +175,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("image") as File;
 
-    if (!file) {
-      return NextResponse.json(
-        { error: "No image file provided" },
-        { status: 400 },
-      );
+    /* ── Input validation ────────────────────────────────────── */
+    const fileError = validateImageFile(file);
+    if (fileError) {
+      return NextResponse.json({ error: fileError }, { status: 400 });
     }
 
     // Convert file to base64
