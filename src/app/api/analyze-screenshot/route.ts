@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
   }
   const openai = new OpenAI({ apiKey });
 
+  /* ── Analysis model ──────────────────────────────────────── */
+  const model = request.headers.get("x-analysis-model") || "gpt-5-mini";
+
   try {
     const formData = await request.formData();
     const file = formData.get("image") as File;
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Call OpenAI Vision API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model,
       messages: [
         {
           role: "user",
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
           ],
         },
       ],
-      max_tokens: 8000,
+      max_completion_tokens: 8000,
       response_format: { type: "json_object" },
     });
 
