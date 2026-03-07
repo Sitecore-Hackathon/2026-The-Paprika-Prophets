@@ -33,10 +33,12 @@ export type AnalyzedComponent = {
   designHints: DesignHints | null;
 }
 
+export type TemplateMemberRole = "parent" | "child" | "folder" | "standalone";
+
 export type TemplateGroup = {
   id: string;
   label: string;
   type: "list" | "standalone";
-  members: { role: "parent" | "child" | "folder" | "standalone"; idx: number }[];
+  members: { role: TemplateMemberRole; idx: number }[];
   insertOptions: string[];
 };
