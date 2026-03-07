@@ -21,6 +21,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { AnalysisLoader } from "../analysis-loader";
+import type { TemplateGroup } from "@/lib/types/component";
 
 /* ── Utilities ─────────────────────────────────────────────────────── */
 
@@ -73,13 +74,7 @@ interface AnalyzedComponent {
 }
 
 /** A group of related templates: parent list + child + folder, or standalone */
-interface TemplateGroup {
-  id: string;
-  label: string;
-  type: "list" | "standalone";
-  members: { role: "parent" | "child" | "folder" | "standalone"; idx: number }[];
-  insertOptions: string[];
-}
+// TemplateGroup is imported from @/lib/types/component
 
 /* ── Constants ────────────────────────────────────────────────────── */
 
@@ -136,7 +131,7 @@ function normalizeComponents(raw: Record<string, unknown>): AnalyzedComponent[] 
     if (comp.isListComponent && comp.childTemplateName) {
       for (const field of comp.fields) {
         if (REFERENCE_FIELD_TYPES.has(field.type) && !field.source) {
-          field.source = `$site/Data/${comp.childTemplateName}s`;
+          field.source = `query:./*`;
         }
       }
     }

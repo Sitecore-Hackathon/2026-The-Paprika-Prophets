@@ -86,12 +86,13 @@ export class AuthoringService {
     return response?.data?.data?.item ?? null;
   }
 
-  async createTemplate(config: TemplateConfig): Promise<string> {
+  async createTemplate(config: TemplateConfig): Promise<{ templateId: string; standardValuesItemId: string | null }> {
     const mutation = buildCreateTemplateMutation(config);
     const response = await this.executeQuery<CreateTemplateResponse>(mutation);
-    const templateId = response?.data?.data?.createItemTemplate?.itemTemplate?.templateId;
+    const itemTemplate = response?.data?.data?.createItemTemplate?.itemTemplate;
+    const templateId = itemTemplate?.templateId;
     if (!templateId) throw new Error(`Mutation succeeded but returned no template ID for "${config.name}"`);
-    return templateId;
+    return { templateId, standardValuesItemId: itemTemplate?.standardValuesItem?.itemId ?? null };
   }
 
   async deleteTemplate(templateId: string): Promise<boolean> {

@@ -31,3 +31,12 @@ export type AnalyzedComponent = {
   sxaStyles: SxaStyleDef[];
   suggestions: string;
 };
+
+/** A group of related templates: parent list + child + folder, or standalone */
+export type TemplateGroup = {
+  id: string;
+  label: string;
+  type: "list" | "standalone";
+  members: { role: "parent" | "child" | "folder" | "standalone"; idx: number }[];
+  insertOptions: string[];
+};
