@@ -29,7 +29,7 @@ export const buildCreateItemMutation = (config: ItemConfig) => {
         }
       ) {
         item {
-          itemId
+          itemId (format: B)
           name
           path
           fields(ownFields: true, excludeStandardFields: true) {
@@ -78,7 +78,7 @@ export const buildUpdateItemFieldsMutation = (
         }
       ) {
         item {
-          itemId
+          itemId (format: B)
           name
           path
         }

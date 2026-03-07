@@ -29,10 +29,12 @@ type ItemPickerInputProps = {
   hint?: string;
   placeholder?: string;
   required?: boolean;
+  error?: string;
   value: string;
   selectedItem: SelectedTreeItem | null;
   onChange: (id: string) => void;
   onSelect: (item: SelectedTreeItem) => void;
+  onBlur?: () => void;
 };
 
 export function ItemPickerInput({
@@ -41,10 +43,12 @@ export function ItemPickerInput({
   hint,
   placeholder = "{00000000-0000-0000-0000-000000000000}",
   required,
+  error,
   value,
   selectedItem,
   onChange,
   onSelect,
+  onBlur,
 }: ItemPickerInputProps) {
   const [open, setOpen] = useState(false);
 
@@ -61,8 +65,9 @@ export function ItemPickerInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`font-mono text-xs${value && !isValidGuid(value) ? " border-destructive focus-visible:ring-destructive" : ""}`}
-          aria-invalid={value ? !isValidGuid(value) : undefined}
+          className={`font-mono text-xs${(value && !isValidGuid(value)) || error ? " border-destructive focus-visible:ring-destructive" : ""}`}
+          aria-invalid={(value ? !isValidGuid(value) : undefined) || !!error}
+          onBlur={onBlur}
         />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

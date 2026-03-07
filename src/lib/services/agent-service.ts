@@ -1,5 +1,5 @@
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
-import type { experimental_Agent } from "@sitecore-marketplace-sdk/xmc";
+import type { experimental_Agent, experimental_Sites } from "@sitecore-marketplace-sdk/xmc";
 
 function extractApiError(err: unknown, fallback: string): Error {
   const detail =
@@ -7,6 +7,22 @@ function extractApiError(err: unknown, fallback: string): Error {
     (err instanceof Error ? err.message : null) ??
     fallback;
   return new Error(detail);
+}
+
+export async function fetchLanguages(
+  client: ClientSDK,
+  sitecoreContextId: string,
+): Promise<experimental_Sites.Language[]> {
+  try {
+    const response = await client.query("xmc.sites.listLanguages", {
+      params: { query: { sitecoreContextId } },
+    });
+    const data = (response as { data?: { data?: experimental_Sites.Language[] } })?.data?.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("[agent-service] fetchLanguages failed:", err);
+    return [];
+  }
 }
 
 export async function fetchSites(

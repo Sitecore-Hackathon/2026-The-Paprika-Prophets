@@ -10,7 +10,6 @@ import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemConfig } from "@/lib/graphql/types";
-import { DEV_COMPONENTS, DEV_GROUPS } from "./dev-data";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
@@ -24,18 +23,12 @@ export function RenderingStep() {
   const { authoringService, template, rendering, setRendering, advanceSubStep } = useStructure();
 
   const components = useMemo<AnalyzedComponent[]>(
-    () =>
-      (data.editedComponents as AnalyzedComponent[])?.length
-        ? (data.editedComponents as AnalyzedComponent[])
-        : DEV_COMPONENTS,
+    () => (data.editedComponents as AnalyzedComponent[]) ?? [],
     [data.editedComponents],
   );
 
   const groups = useMemo<TemplateGroup[]>(
-    () =>
-      (data.templateGroups as TemplateGroup[])?.length
-        ? (data.templateGroups as TemplateGroup[])
-        : DEV_GROUPS,
+    () => (data.templateGroups as TemplateGroup[]) ?? [],
     [data.templateGroups],
   );
 
@@ -99,6 +92,15 @@ export function RenderingStep() {
         (t) => t.groupId === group.id && (t.role === "standalone" || t.role === "parent"),
       );
 
+      // Find the folder result for this group to build the Datasource Location query
+      const folderResult = template.results.find(
+        (t) => t.groupId === group.id && t.role === "folder",
+      );
+      const folderId = folderResult?.id ?? "";
+      const datasourceLocation = folderId   
+        ? `query:$site/Data/*[@@templateid='${folderId}']|query:$sharedSites/Data/*[@@templateid='${folderId}']`
+        : "";
+
       const config: ItemConfig = {
         name: resolvedName,
         templateId: JSON_RENDERING_TEMPLATE_ID,
@@ -108,6 +110,7 @@ export function RenderingStep() {
         fields: [
           { name: "ComponentName", value: comp.componentName },
           { name: "Datasource Template", value: templateResult?.path ?? "" },
+          { name: "Datasource Location", value: datasourceLocation },
         ],
       };
 

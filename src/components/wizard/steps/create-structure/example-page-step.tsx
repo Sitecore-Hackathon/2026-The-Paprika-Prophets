@@ -12,14 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
-import { createPage, addComponentOnPage, updateComponentContent } from "@/lib/services/agent-service";
+import { createPage, addComponentOnPage, updateComponentContent, fetchLanguages } from "@/lib/services/agent-service";
 import type { AuthoringService } from "@/lib/services/authoring-service";
 import { generateDummyFieldValue } from "@/lib/dummy-fields";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemResult } from "./structure-context";
-import { DEV_COMPONENTS, DEV_GROUPS } from "./dev-data";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
@@ -38,6 +38,8 @@ type ComponentPlacement = {
   datasourceId: string | null;
   /** IDs of child items created under the parent datasource (list components only). */
   childIds: string[];
+  /** ID of the shared datasource copy created under AppDatasourcesPath. */
+  sharedDatasourceId: string | null;
   error: string | null;
 };
 
@@ -47,6 +49,20 @@ type PageResult = {
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
+
+/** Populates a datasource item with generated dummy values for every field on comp. */
+async function populateDatasourceContent(
+  client: ClientSDK,
+  sitecoreContextId: string,
+  itemId: string,
+  comp: AnalyzedComponent,
+  lang: string,
+): Promise<void> {
+  const fields = Object.fromEntries(
+    comp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, lang)]),
+  );
+  await updateComponentContent(client, sitecoreContextId, itemId, fields, lang);
+}
 
 /**
  * Creates CHILD_ITEM_COUNT child items under parentDatasourceId,
@@ -76,11 +92,7 @@ async function createChildItems(
     });
     if (!item?.itemId) throw new Error(`Child item ${i + 1} returned no ID`);
     childIds.push(item.itemId);
-
-    const dummyFields = Object.fromEntries(
-      childComp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, language)]),
-    );
-    await updateComponentContent(client, sitecoreContextId, item.itemId, dummyFields, language);
+    await populateDatasourceContent(client, sitecoreContextId, item.itemId, childComp, language);
   }
 
   // Write created child IDs to the parent datasource's multivalue reference field
@@ -98,6 +110,153 @@ async function createChildItems(
   return childIds;
 }
 
+/**
+ * Creates a named folder under dsParentId (using the group's folder template)
+ * then creates a single datasource item inside it, populated with dummy data.
+ * Returns the shared datasource item ID, or null if anything is missing.
+ */
+async function createSharedDatasource(
+  svc: AuthoringService,
+  client: ClientSDK,
+  sitecoreContextId: string,
+  dsParentId: string,
+  renderingGroupId: string,
+  templateResults: ItemResult[],
+  comp: AnalyzedComponent,
+  lang: string,
+): Promise<string | null> {
+  const folderTemplate = templateResults.find(
+    (t) => t.groupId === renderingGroupId && t.role === "folder",
+  );
+  const dataTemplate = templateResults.find(
+    (t) => t.groupId === renderingGroupId && (t.role === "parent" || t.role === "standalone"),
+  );
+  if (!folderTemplate?.id || !dataTemplate?.id) return null;
+
+  const folderItem = await svc.createItem({
+    name: folderTemplate.resolvedName,
+    templateId: folderTemplate.id,
+    parentId: dsParentId,
+    parentPath: "",
+    language: lang,
+  });
+  if (!folderItem?.itemId) return null;
+
+  const sharedItem = await svc.createItem({
+    name: comp.componentName,
+    templateId: dataTemplate.id,
+    parentId: folderItem.itemId,
+    parentPath: "",
+    language: lang,
+  });
+  if (!sharedItem?.itemId) return null;
+
+  await populateDatasourceContent(client, sitecoreContextId, sharedItem.itemId, comp, lang);
+  return sharedItem.itemId;
+}
+
+type ProcessPlacementArgs = {
+  svc: AuthoringService;
+  client: ClientSDK;
+  sitecoreContextId: string;
+  renderingResult: ItemResult;
+  comp: AnalyzedComponent;
+  groups: TemplateGroup[];
+  components: AnalyzedComponent[];
+  templateResults: ItemResult[];
+  dsParentId: string;
+  pageId: string;
+  placeholder: string;
+  lang: string;
+};
+
+/**
+ * Handles the full placement lifecycle for one rendering:
+ * add to page → populate datasource → create children (list) → create shared datasource.
+ * Returns a completed ComponentPlacement (success or error).
+ */
+async function processPlacement({
+  svc,
+  client,
+  sitecoreContextId,
+  renderingResult,
+  comp,
+  groups,
+  components,
+  templateResults,
+  dsParentId,
+  pageId,
+  placeholder,
+  lang,
+}: ProcessPlacementArgs): Promise<ComponentPlacement> {
+  const base = { componentName: comp.componentName, childIds: [] as string[], sharedDatasourceId: null };
+
+  if (!renderingResult.id) {
+    return { ...base, componentId: null, datasourceId: null, error: "Rendering item was not created" };
+  }
+
+  let componentId: string | null = null;
+  let datasourceId: string | null = null;
+
+  try {
+    const addResponse = await addComponentOnPage(client, sitecoreContextId, {
+      pageId,
+      componentRenderingId: renderingResult.id,
+      placeholderPath: placeholder,
+      componentItemName: comp.componentName,
+      language: lang,
+    });
+    componentId = addResponse.componentId;
+    datasourceId = addResponse.datasourceId ?? null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Add component failed";
+    return { ...base, componentId: null, datasourceId: null, error: msg };
+  }
+
+  if (datasourceId) {
+    try {
+      await populateDatasourceContent(client, sitecoreContextId, datasourceId, comp, lang);
+    } catch {
+      return { ...base, componentId, datasourceId, error: "Component added but content update failed" };
+    }
+  }
+
+  // For list groups: create child items and link them to the parent datasource
+  let childIds: string[] = [];
+  if (renderingResult.role === "parent" && datasourceId) {
+    const group = groups.find((g) => g.id === renderingResult.groupId);
+    const childMemberIdx = group?.members.find((m) => m.role === "child")?.idx;
+    const childComp = childMemberIdx !== undefined ? components[childMemberIdx] : null;
+    const childTemplateResult = templateResults.find(
+      (t) => t.groupId === renderingResult.groupId && t.role === "child",
+    );
+    if (group && childComp && childTemplateResult?.id) {
+      try {
+        childIds = await createChildItems(
+          svc, client, sitecoreContextId, datasourceId, comp, childComp, childTemplateResult.id, lang,
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Child item creation failed";
+        return { ...base, componentId, datasourceId, childIds: [], error: msg };
+      }
+    }
+  }
+
+  // Create shared datasource folder + item under AppDatasourcesPath (non-fatal)
+  let sharedDatasourceId: string | null = null;
+  if (dsParentId && datasourceId) {
+    try {
+      sharedDatasourceId = await createSharedDatasource(
+        svc, client, sitecoreContextId, dsParentId, renderingResult.groupId, templateResults, comp, lang,
+      );
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  return { componentName: comp.componentName, componentId, datasourceId, childIds, sharedDatasourceId, error: null };
+}
+
 /* ── Component ──────────────────────────────────────────────────────── */
 
 export function ExamplePageStep() {
@@ -109,24 +268,19 @@ export function ExamplePageStep() {
   const { authoringService, template, rendering, page, setPage } = useStructure();
 
   const components = useMemo<AnalyzedComponent[]>(
-    () =>
-      (data.editedComponents as AnalyzedComponent[])?.length
-        ? (data.editedComponents as AnalyzedComponent[])
-        : DEV_COMPONENTS,
+    () => (data.editedComponents as AnalyzedComponent[]) ?? [],
     [data.editedComponents],
   );
 
   const groups = useMemo<TemplateGroup[]>(
-    () =>
-      (data.templateGroups as TemplateGroup[])?.length
-        ? (data.templateGroups as TemplateGroup[])
-        : DEV_GROUPS,
+    () => (data.templateGroups as TemplateGroup[]) ?? [],
     [data.templateGroups],
   );
 
   const defaultPageLocation = siteDetails?.page_locations?.[0] ?? null;
   const routeTemplate = siteSettings?.routeBaseTemplateItem ?? null;
   const defaultTemplateId = siteSettings?.RouteBaseTemplate ?? "";
+  const defaultDsParent = siteSettings?.appDatasourcesItem ?? null;
 
   const [parentId, setParentId] = useState(defaultPageLocation?.itemId ?? "");
   const [selectedTreeItem, setSelectedTreeItem] = useState<SelectedTreeItem | null>(
@@ -142,12 +296,48 @@ export function ExamplePageStep() {
   const [selectedTemplateItem, setSelectedTemplateItem] = useState<SelectedTreeItem | null>(
     routeTemplate ?? null,
   );
+  const [dsParentId, setDsParentId] = useState(siteSettings?.AppDatasourcesPath ?? "");
+  const [dsTreeItem, setDsTreeItem] = useState<SelectedTreeItem | null>(defaultDsParent);
   const [pageName, setPageName] = useState(`${components[0]?.componentName || "Example"}`);
   const [placeholder, setPlaceholder] = useState("headless-main");
   const [language, setLanguage] = useState("en");
+  const [availableLanguages, setAvailableLanguages] = useState<{ name: string; displayName: string }[]>([]);
+  const [languagesLoading, setLanguagesLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<PageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!sitecoreContextId) return;
+    setLanguagesLoading(true);
+    fetchLanguages(client, sitecoreContextId)
+      .then((langs) => {
+        const items = langs
+          .filter((l) => l.name)
+          .map((l) => ({ name: l.name!, displayName: l.displayName ?? l.name! }));
+        setAvailableLanguages(items);
+        // Auto-select first language if current value is not in the list
+        if (items.length > 0 && !items.some((l) => l.name === language)) {
+          setLanguage(items[0].name);
+        }
+      })
+      .finally(() => setLanguagesLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sitecoreContextId]);
+
+  // Reset result whenever key inputs change so the UI goes back to the Create state
+  useEffect(() => {
+    if (running || result === null) return;
+    setResult(null);
+    setError(null);
+    setPage((prev) => ({ ...prev, state: { status: "idle", createdIds: [], error: null } }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageName, parentId, templateId, placeholder, language]);
+
+  const touch = (field: string) => setTouched((prev) => new Set(prev).add(field));
+  const fieldError = (field: string, value: string) =>
+    touched.has(field) && !value.trim() ? "This field is required." : undefined;
 
   const [debouncedPageName, setDebouncedPageName] = useState(pageName);
   useEffect(() => {
@@ -165,15 +355,6 @@ export function ExamplePageStep() {
   const isRenamed = preflightName !== null && preflightName !== preflightInputName;
 
   const handleCreate = useCallback(async () => {
-    if (!parentId.trim() || !templateId.trim()) {
-      setError("Page location or template not available.");
-      return;
-    }
-    if (!pageName.trim()) {
-      setError("Page name cannot be empty.");
-      return;
-    }
-
     setRunning(true);
     setError(null);
     setPage((prev) => ({ ...prev, state: { ...prev.state, status: "running", error: null } }));
@@ -220,78 +401,21 @@ export function ExamplePageStep() {
       const comp = components.find((c) => c.componentName === renderingResult.originalName);
       if (!comp) continue;
 
-      if (!renderingResult.id) {
-        partialPlacements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, childIds: [], error: "Rendering item was not created" });
-        setResult({ pageId, placements: [...partialPlacements] });
-        continue;
-      }
-
-      let componentId: string | null = null;
-      let datasourceId: string | null = null;
-
-      try {
-        const addResponse = await addComponentOnPage(client, sitecoreContextId, {
-          pageId,
-          componentRenderingId: renderingResult.id,
-          placeholderPath: placeholder,
-          componentItemName: comp.componentName,
-          language: lang,
-        });
-        componentId = addResponse.componentId;
-        datasourceId = addResponse.datasourceId ?? null;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Add component failed";
-        partialPlacements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, childIds: [], error: msg });
-        setResult({ pageId, placements: [...partialPlacements] });
-        continue;
-      }
-
-      // Populate parent datasource with dummy field values
-      if (datasourceId) {
-        const initialFields = Object.fromEntries(
-          comp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, lang)]),
-        );
-        try {
-          await updateComponentContent(client, sitecoreContextId, datasourceId, initialFields, lang);
-        } catch {
-          partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds: [], error: "Component added but content update failed" });
-          setResult({ pageId, placements: [...partialPlacements] });
-          continue;
-        }
-      }
-
-      // For list groups: create child items and link them to the parent datasource
-      let childIds: string[] = [];
-      if (renderingResult.role === "parent" && datasourceId) {
-        const group = groups.find((g) => g.id === renderingResult.groupId);
-        const childMemberIdx = group?.members.find((m) => m.role === "child")?.idx;
-        const childComp = childMemberIdx !== undefined ? components[childMemberIdx] : null;
-        const childTemplateResult: ItemResult | undefined = template.results.find(
-          (t) => t.groupId === renderingResult.groupId && t.role === "child",
-        );
-
-        if (group && childComp && childTemplateResult?.id) {
-          try {
-            childIds = await createChildItems(
-              authoringService,
-              client,
-              sitecoreContextId,
-              datasourceId,
-              comp,
-              childComp,
-              childTemplateResult.id,
-              lang,
-            );
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : "Child item creation failed";
-            partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds: [], error: msg });
-            setResult({ pageId, placements: [...partialPlacements] });
-            continue;
-          }
-        }
-      }
-
-      partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds, error: null });
+      const placement = await processPlacement({
+        svc: authoringService,
+        client,
+        sitecoreContextId,
+        renderingResult,
+        comp,
+        groups,
+        components,
+        templateResults: template.results,
+        dsParentId,
+        pageId,
+        placeholder,
+        lang,
+      });
+      partialPlacements.push(placement);
       setResult({ pageId, placements: [...partialPlacements] });
     }
 
@@ -318,6 +442,7 @@ export function ExamplePageStep() {
     rendering,
     template.results,
     page.state.createdIds,
+    dsParentId,
     result,
     client,
     sitecoreContextId,
@@ -326,7 +451,15 @@ export function ExamplePageStep() {
   ]);
 
   const isUnlocked = rendering.state.status === "done";
-  const canRun = isUnlocked && !!parentId.trim() && !!templateId.trim() && !running && !preflightLoading;
+  const canRun =
+    isUnlocked &&
+    !!parentId.trim() &&
+    !!templateId.trim() &&
+    !!pageName.trim() &&
+    !!placeholder.trim() &&
+    !!language.trim() &&
+    !running &&
+    !preflightLoading;
   const isSuccess = result !== null && !result.placements.some((p) => p.error);
   const hasPlacementErrors = result !== null && result.placements.some((p) => p.error);
 
@@ -339,10 +472,12 @@ export function ExamplePageStep() {
         label="Page Location"
         hint="Sitecore folder where the example page will be created."
         required
+        error={fieldError("parentId", parentId)}
         value={parentId}
         selectedItem={selectedTreeItem}
-        onChange={(id) => { setParentId(id); setSelectedTreeItem(null); }}
-        onSelect={(item) => { setParentId(item.itemId); setSelectedTreeItem(item); }}
+        onChange={(id) => { setParentId(id); setSelectedTreeItem(null); touch("parentId"); }}
+        onSelect={(item) => { setParentId(item.itemId); setSelectedTreeItem(item); touch("parentId"); }}
+        onBlur={() => touch("parentId")}
       />
 
       <ItemPickerInput
@@ -350,10 +485,22 @@ export function ExamplePageStep() {
         label="Page Template"
         hint="Sitecore template used to create the example page."
         required
+        error={fieldError("templateId", templateId)}
         value={templateId}
         selectedItem={selectedTemplateItem}
-        onChange={(id) => { setTemplateId(id); setSelectedTemplateItem(null); }}
-        onSelect={(item) => { setTemplateId(item.itemId); setSelectedTemplateItem(item); }}
+        onChange={(id) => { setTemplateId(id); setSelectedTemplateItem(null); touch("templateId"); }}
+        onSelect={(item) => { setTemplateId(item.itemId); setSelectedTemplateItem(item); touch("templateId"); }}
+        onBlur={() => touch("templateId")}
+      />
+
+      <ItemPickerInput
+        id="ds-parent-id"
+        label="App Datasources Path"
+        hint="Shared datasource root — a folder per group will be created here with a sample datasource item."
+        value={dsParentId}
+        selectedItem={dsTreeItem}
+        onChange={(id) => { setDsParentId(id); setDsTreeItem(null); }}
+        onSelect={(item) => { setDsParentId(item.itemId); setDsTreeItem(item); }}
       />
 
       {isUnlocked && (
@@ -366,9 +513,15 @@ export function ExamplePageStep() {
               id="page-name"
               required
               value={pageName}
-              onChange={(e) => setPageName(e.target.value)}
+              onChange={(e) => { setPageName(e.target.value); touch("pageName"); }}
+              onBlur={() => touch("pageName")}
               placeholder="Example page name"
+              aria-invalid={!!fieldError("pageName", pageName)}
+              className={fieldError("pageName", pageName) ? "border-destructive focus-visible:ring-destructive" : ""}
             />
+            {fieldError("pageName", pageName) && (
+              <p className="text-xs text-destructive">{fieldError("pageName", pageName)}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="placeholder">
@@ -378,23 +531,56 @@ export function ExamplePageStep() {
               id="placeholder"
               required
               value={placeholder}
-              onChange={(e) => setPlaceholder(e.target.value)}
+              onChange={(e) => { setPlaceholder(e.target.value); touch("placeholder"); }}
+              onBlur={() => touch("placeholder")}
               placeholder="headless-main"
+              aria-invalid={!!fieldError("placeholder", placeholder)}
+              className={fieldError("placeholder", placeholder) ? "border-destructive focus-visible:ring-destructive" : ""}
             />
-            <p className="text-xs text-muted-foreground">Placeholder key where components will be inserted.</p>
+            {fieldError("placeholder", placeholder)
+              ? <p className="text-xs text-destructive">{fieldError("placeholder", placeholder)}</p>
+              : <p className="text-xs text-muted-foreground">Placeholder key where components will be inserted.</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="language">
               Language<span className="text-destructive ml-0.5">*</span>
             </Label>
-            <Input
-              id="language"
-              required
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              placeholder="en"
-            />
-            <p className="text-xs text-muted-foreground">Content language for the page and component datasources.</p>
+            {availableLanguages.length > 0 ? (
+              <Select
+                value={language}
+                onValueChange={(val) => { setLanguage(val); touch("language"); }}
+              >
+                <SelectTrigger
+                  id="language"
+                  className="w-full"
+                  aria-invalid={!!fieldError("language", language)}
+                >
+                  <SelectValue placeholder="Select a language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((l) => (
+                    <SelectItem key={l.name} value={l.name}>
+                      {l.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="language"
+                required
+                value={language}
+                onChange={(e) => { setLanguage(e.target.value); touch("language"); }}
+                onBlur={() => touch("language")}
+                placeholder={languagesLoading ? "Loading…" : "en"}
+                disabled={languagesLoading}
+                aria-invalid={!!fieldError("language", language)}
+                className={fieldError("language", language) ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+            )}
+            {fieldError("language", language)
+              ? <p className="text-xs text-destructive">{fieldError("language", language)}</p>
+              : <p className="text-xs text-muted-foreground">Content language for the page and component datasources.</p>}
           </div>
         </div>
       )}
@@ -418,7 +604,7 @@ export function ExamplePageStep() {
         </Alert>
       )}
 
-      {!isSuccess && (
+      {!isSuccess && !hasPlacementErrors && (
         <Button onClick={handleCreate} disabled={!canRun} className="w-full">
           {buttonLabel}
         </Button>
@@ -426,7 +612,7 @@ export function ExamplePageStep() {
 
       {hasPlacementErrors && (
         <Button variant="outline" onClick={handleCreate} disabled={running} className="w-full">
-          Retry
+          {running ? "Retrying…" : "Retry"}
         </Button>
       )}
 
@@ -450,6 +636,9 @@ export function ExamplePageStep() {
                   <span className="font-medium">{p.componentName}</span>
                   {p.datasourceId && (
                     <span className="text-xs text-muted-foreground font-mono truncate">{p.datasourceId}</span>
+                  )}
+                  {p.sharedDatasourceId && (
+                    <span className="text-xs text-muted-foreground font-mono truncate" title="Shared datasource">↳ {p.sharedDatasourceId}</span>
                   )}
                   {p.error && (
                     <span className="text-xs text-destructive">{p.error}</span>
