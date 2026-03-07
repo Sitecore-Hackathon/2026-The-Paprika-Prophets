@@ -76,11 +76,12 @@ export function CodeGeneration() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
-  /* Only include non-folder components for code gen (folders have no rendering) */
+  /* Only include non-folder, non-child components for code gen.
+     Folders have no rendering; child templates are rendered inline by their parent. */
   const codegenComponents = useMemo(() => {
     if (!editedComponents) return [];
-    return (editedComponents as { isDatasourceFolder?: boolean }[]).filter(
-      (c) => !c.isDatasourceFolder,
+    return (editedComponents as { isDatasourceFolder?: boolean; parentTemplateName?: string | null; isListComponent?: boolean }[]).filter(
+      (c) => !c.isDatasourceFolder && !c.parentTemplateName,
     );
   }, [editedComponents]);
 
@@ -208,7 +209,7 @@ export function CodeGeneration() {
                     </td>
                     <td className="px-3 py-2">
                       <Badge colorScheme={comp.isListComponent ? "primary" : "neutral"} size="sm">
-                        {comp.isListComponent ? "List Parent" : comp.parentTemplateName ? "Child" : "Standalone"}
+                        {comp.isListComponent ? "List Parent" : "Standalone"}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">{(comp.fields as unknown[])?.length ?? 0}</td>
@@ -267,7 +268,7 @@ export function CodeGeneration() {
       </Card>
 
       {/* Generate button */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-center gap-4">
         <Button size="lg" onClick={handleGenerate} disabled={generating}>
           {generating ? "Generating…" : "Generate Component Code"}
         </Button>

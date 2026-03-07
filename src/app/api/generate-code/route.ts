@@ -97,8 +97,37 @@ Use these for inline editing support:
 
 ═══ LIST COMPONENTS ═══════════════════════════════════════
 For list components with a Treelist/Multilist "Items" field:
-- The Items field value is an array of referenced items.
-- Map over items and render the child component for each.
+- Do NOT generate a separate rendering file for the child template.
+- The parent component owns all rendering. Inside it, iterate over the Items array.
+- For each item, render the child template's fields inline using the same rendering helpers (<Text />, <ContentSdkImage />, etc.).
+- Define a ChildFields interface (or inline type) for the child item's fields.
+- Example pattern:
+\`\`\`tsx
+// inside the parent component
+interface NewsCardFields {
+  CardImage: ImageField;
+  ArticleTitle: Field<string>;
+  PublishDate: Field<string>;
+  ArticleLink: LinkField;
+}
+
+interface Fields {
+  SectionTitle: Field<string>;
+  Items: { fields: NewsCardFields }[];
+}
+
+// in JSX:
+{fields.Items?.map((item, i) => (
+  <div key={i} className="list-item">
+    <ContentSdkImage field={item.fields.CardImage} />
+    <Text field={item.fields.ArticleTitle} />
+    <DateField field={item.fields.PublishDate} />
+    <ContentSdkLink field={item.fields.ArticleLink} />
+  </div>
+))}
+\`\`\`
+
+IMPORTANT: Only generate files for parent/standalone components. Child templates are rendered inline by their parent.
 
 ═══ FILE / FOLDER STRUCTURE ════════════════════════════════
 Each component lives in its own folder under src/components/.
