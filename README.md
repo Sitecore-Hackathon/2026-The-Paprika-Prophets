@@ -112,7 +112,84 @@ When a tenant is used for the first time, the app launches an **Installation Wiz
    ![Confirm Settings](docs/images/marketplace-setup/10_set_openai_apikey.png?raw=true "Confirm Settings")
 
 ## Usage instructions
- (TODO FILL IT LATER WHEN FULL FLOW IS IN PACE)
+
+### How does it work?
+
+Component Forge guides you through a **6-step wizard** that takes you from a design screenshot or HTML snippet all the way to a fully scaffolded Sitecore component — templates, renderings, sample content, and production-ready Next.js code.
+
+The wizard uses OpenAI's vision and language models behind the scenes: a **vision-capable model** analyses your input to identify components, fields, variants, and styles, while a **code-optimised model** generates the final Next.js component code. You stay in control at every step — review, edit, and refine before anything is created in Sitecore.
+
+### Create a component step by step
+
+#### Step 1 — Select Tenant & Site
+
+Choose the Sitecore AI tenant and site where the component will be created. The app reads from your Marketplace context and lists all available tenants and sites.
+
+![Select Tenant](docs/images/usage/1_select_tenant.png?raw=true "Select Tenant & Site")
+
+#### Step 2 — Installation & Settings
+
+On first use, the wizard ensures all required Sitecore items are in place (template folders, settings, base templates). If anything is missing, it creates the items automatically. On subsequent runs this step is skipped.
+
+Once installed, open the **Settings** dialog to enter your OpenAI API Key and choose the AI models for analysis and code generation.
+
+![Installation](docs/images/usage/2_install.png?raw=true "Installation Check")
+
+![Update Settings](docs/images/usage/3_update_settings.png?raw=true "Update Settings")
+
+#### Step 3 — Component Input
+
+Provide the design you want to turn into a Sitecore component. Choose your input method — **Screenshot** or **HTML** — then upload or paste your content.
+
+![Choose Method](docs/images/usage/4_choose_method.png?raw=true "Choose Input Method")
+
+![Upload Screenshot](docs/images/usage/5_upload_screenshot.png?raw=true "Upload Screenshot")
+
+#### Step 4 — Analysis Results (Components Overview)
+
+Review the AI-generated analysis. For every identified component you can:
+
+- Edit the component name, description, and field definitions (name, type, source).
+- Add, remove, or rename **variants** and **SXA styles**.
+- See how components are grouped (list parent → child → folder, or standalone).
+- **Re-analyse** with additional feedback if the initial result needs adjustment.
+
+![Review Results](docs/images/usage/6_review_the_result.png?raw=true "Review the Result")
+
+![Adjust Templates](docs/images/usage/7_adjust_template_if_needed.png?raw=true "Adjust Template If Needed")
+
+![Re-analyse](docs/images/usage/8_reanalyze_if_needed.png?raw=true "Re-analyse If Needed")
+
+#### Step 5 — Create Sitecore Structure
+
+With one click the app creates all the Sitecore items for the approved components. Pick the target locations for templates, renderings, and datasource folders, then watch the progress in real time.
+
+- Data templates with fields, standard values, and insert options
+- Rendering items registered under the site
+- Datasource folders with sample content
+- A demo page with the components already placed
+
+![Template Location](docs/images/usage/9_template_location.png?raw=true "Template Location")
+
+![Pick Template Location](docs/images/usage/10_pick_template_location.png?raw=true "Pick Template Location")
+
+![Create Renderings](docs/images/usage/11_Create_renderings_change_location.png?raw=true "Create Renderings & Change Location")
+
+![Setup Demo Page](docs/images/usage/12_Setup_demo_page.png?raw=true "Setup Demo Page")
+
+#### Step 6 — Code Generation
+
+The app generates **Content SDK–compatible Next.js component code** based on the templates created in the previous step. The output includes:
+
+- A ready-to-use `.tsx` component file (with optional separate props file).
+- A combined **terminal command block** you can copy-paste to scaffold the files into your repository.
+- Choice of styling system (CSS Modules, Tailwind CSS, or Styled Components).
+
+![Generate Code](docs/images/usage/13_generatE_code.png?raw=true "Generate Code")
+
+![Review & Create in Project](docs/images/usage/14_review_code_create_in_project.png?raw=true "Review Code & Create in Project")
+
+<!-- ![Code Generation](docs/images/usage/step6_codegen.png?raw=true "Code Generation") -->
 
 ## Comments
 
