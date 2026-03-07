@@ -10,12 +10,12 @@
 ⟹ Best Marketplace App for Sitecore AI
 
 ## Description
-**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings, variants, styles, and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes — not hours — with a human in the loop.
+**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes — not hours — with a human in the loop.
 
 ### Component Forge Features
 
 - **AI-powered component recognition** — Analyze a screenshot or HTML snippet to automatically identify one or more components, their fields, variants, and SXA styles.
-- **Iterative analysis refinement** — Fine-tune and replay the analysis phase to improve template, variant, and styling outcomes before committing to Sitecore.
+- **Iterative analysis refinement** — Fine-tune and replay the analysis phase to improve template outcomes before committing to Sitecore.
 - **Full Sitecore item creation** — Create all necessary Sitecore items in one step: templates, renderings, sample data, and a sample page — powered by the Agent API.
 - **Content SDK code generation** — Generate production-ready Next.js component code compatible with `@sitecore-content-sdk/nextjs`, with copy-pastable terminal commands for quick scaffolding into your repository.
 - **Split model selection** — Choose different AI models for analysis and code generation independently, so you can use the best-suited model for each task (e.g. a vision model for analysis, a coding model for generation).

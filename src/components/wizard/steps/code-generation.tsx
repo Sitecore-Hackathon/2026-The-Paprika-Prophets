@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useWizard } from "../wizard-context";
+import { useRunLog } from "@/components/providers/run-log-provider";
+import { saveRunToSitecore } from "@/lib/services/logging-service";
+import type { InstallationService } from "@/lib/services/installation-service";
 import {
   Card,
   CardContent,
@@ -59,12 +62,14 @@ function parseCodeBlocks(raw: string): CodeBlock[] {
 
 export function CodeGeneration() {
   const { goBack, data } = useWizard();
+  const { recordStep, finalize, getRunLog } = useRunLog();
 
   /* Read from wizard context */
   const openAiApiKey = (data.openAiApiKey as string) ?? "";
   const codingModel = (data.codingLlmModel as string) || "gpt-5.3-codex";
   const editedComponents = data.editedComponents as Record<string, unknown>[] | undefined;
   const templateGroups = data.templateGroups as Record<string, unknown>[] | undefined;
+  const installService = data.installationService as InstallationService | undefined;
 
   /* Local state */
   const [separatePropsFile, setSeparatePropsFile] = useState(false);
@@ -75,6 +80,8 @@ export function CodeGeneration() {
   const [codeBlocks, setCodeBlocks] = useState<CodeBlock[]>([]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+  const [savingLog, setSavingLog] = useState(false);
+  const [logSaved, setLogSaved] = useState<boolean | null>(null);
 
   /* Only include non-folder, non-child components for code gen.
      Folders have no rendering; child templates are rendered inline by their parent. */
@@ -118,14 +125,37 @@ export function CodeGeneration() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Generation failed");
 
+      if (json.metadata) recordStep(json.metadata);
       setRawOutput(json.code);
       setCodeBlocks(parseCodeBlocks(json.code));
+      finalize({
+        generatedCode: json.code,
+        componentCount: codegenComponents.length,
+        status: "completed",
+      });
+
+      /* Persist run log to Sitecore (best-effort, non-blocking) */
+      if (installService) {
+        const runTemplateId = installService.getTemplateId("ComponentForge Run");
+        const runStepTemplateId = installService.getTemplateId("ComponentForge RunStep");
+        if (runTemplateId && runStepTemplateId) {
+          const log = getRunLog();
+          if (log) {
+            setSavingLog(true);
+            saveRunToSitecore(installService.getAuthoringService(), log, { runTemplateId, runStepTemplateId })
+              .then((r) => setLogSaved(r.success))
+              .catch(() => setLogSaved(false))
+              .finally(() => setSavingLog(false));
+          }
+        }
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Generation failed");
+      finalize({ status: "failed" });
     } finally {
       setGenerating(false);
     }
-  }, [openAiApiKey, codingModel, codegenComponents, templateGroups, separatePropsFile, stylingSystem]);
+  }, [openAiApiKey, codingModel, codegenComponents, templateGroups, separatePropsFile, stylingSystem, recordStep, finalize, installService, getRunLog]);
 
   /* ── Clipboard ────────────────────────────────────────── */
 
@@ -356,9 +386,20 @@ export function CodeGeneration() {
         </Collapsible>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between">
+      {/* Run log status + navigation */}
+      <div className="flex items-center justify-between">
         <Button variant="outline" onClick={goBack}>Back</Button>
+        <div className="flex items-center gap-3">
+          {savingLog && (
+            <span className="text-xs text-muted-foreground animate-pulse">Saving run log…</span>
+          )}
+          {logSaved === true && (
+            <span className="text-xs text-green-600">Run log saved to Sitecore</span>
+          )}
+          {logSaved === false && (
+            <span className="text-xs text-amber-600">Run log save failed</span>
+          )}
+        </div>
       </div>
     </div>
   );

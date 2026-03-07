@@ -62,6 +62,11 @@ export class InstallationService {
     return this.authoringService;
   }
 
+  /** Look up a template ID by its display name (populated after checkInstallation/install). */
+  getTemplateId(name: string): string | undefined {
+    return this.templateIdMap.get(name);
+  }
+
   async checkInstallation(): Promise<InstallationStatus> {
     try {
       const templateFolderExists = await this.checkTemplateFolderExists();

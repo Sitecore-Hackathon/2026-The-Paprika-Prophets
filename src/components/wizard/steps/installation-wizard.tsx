@@ -144,6 +144,13 @@ export function InstallationWizard() {
   const isInstalled = status?.state === "installed";
   const isReady = isInstalled && openAiKeySet;
 
+  /* Expose the service to downstream wizard steps (code-generation needs it for run-log save). */
+  useEffect(() => {
+    if (isInstalled) {
+      setStepData("installationService", service);
+    }
+  }, [isInstalled, service, setStepData]);
+
   return (
     <div className="space-y-6 pt-8">
       <div>

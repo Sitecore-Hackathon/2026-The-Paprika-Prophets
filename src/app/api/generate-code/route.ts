@@ -218,6 +218,9 @@ export async function POST(request: NextRequest) {
     const userPrompt = buildUserPrompt(components, groups, options as CodeGenOptions);
 
     let code: string;
+    let promptTokens = 0;
+    let completionTokens = 0;
+    const t0 = Date.now();
 
     if (isCodexModel) {
       /* Codex models use the Responses API */
@@ -229,6 +232,8 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.output_text ?? "";
+      promptTokens = response.usage?.input_tokens ?? 0;
+      completionTokens = response.usage?.output_tokens ?? 0;
     } else {
       /* Chat models use the Chat Completions API */
       const response = await openai.chat.completions.create({
@@ -241,9 +246,25 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.choices[0].message.content ?? "";
+      promptTokens = response.usage?.prompt_tokens ?? 0;
+      completionTokens = response.usage?.completion_tokens ?? 0;
     }
+    const durationMs = Date.now() - t0;
 
-    return NextResponse.json({ success: true, code, model });
+    return NextResponse.json({
+      success: true,
+      code,
+      model,
+      metadata: {
+        stepName: "generate-code",
+        model,
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Code generation failed";
