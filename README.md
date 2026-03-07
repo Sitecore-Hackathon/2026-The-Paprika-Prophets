@@ -22,9 +22,9 @@
 - **Audit logging** — Track every AI call and generation step with detailed run logs stored in Sitecore for review and transparency.
 
 ## Video link
-⟹ Provide a video highlighing your Hackathon module submission and provide a link to the video. You can use any video hosting, file share or even upload the video to this repository. _Just remember to update the link below_
 
-⟹ [Replace this Video link](#video-link)
+
+⟹ [Demo Video](https://www.youtube.com/watch?v=0iWd2wheDM0)
 
 ## Pre-requisites and Dependencies
 

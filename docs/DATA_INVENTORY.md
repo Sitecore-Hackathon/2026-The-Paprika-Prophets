@@ -51,7 +51,7 @@ User (Sitecore iframe)
 
 - **Application hosting:** Determined by Vercel / deployment target region.
 - **OpenAI processing:** Data is processed by OpenAI in accordance with their [API data usage policy](https://openai.com/policies/api-data-usage-policies).
-- **Sitecore content tree:** Same region as the customer's XM Cloud instance.
+- **Sitecore content tree:** Same region as the customer's SitecoreAI instance.
 
 ## Data Deletion
 
