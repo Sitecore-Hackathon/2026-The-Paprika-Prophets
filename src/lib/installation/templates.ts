@@ -42,14 +42,69 @@ export const COMPONENT_FORGE_LOGS_FOLDER_TEMPLATE: TemplateConfig = {
   ],
 };
 
-export const COMPONENT_FORGE_LOG_ENTRY_TEMPLATE: TemplateConfig = {
-  name: "ComponentForge LogEntry",
+export const COMPONENT_FORGE_RUN_TEMPLATE: TemplateConfig = {
+  name: "ComponentForge Run",
   parentId: SITECORE_IDS.TEMPLATES.USER_DEFINED,
   parentPath: SITECORE_PATHS.TEMPLATES.COMPONENT_FORGE,
   sections: [
     {
-      name: "Data",
-      fields: [{ name: "Logs", type: "Multi-Line Text" }],
+      name: "Run Info",
+      fields: [
+        { name: "RunId", type: "Single-Line Text" },
+        { name: "RunDate", type: "Datetime" },
+        { name: "RunStatus", type: "Single-Line Text" },
+        { name: "UserName", type: "Single-Line Text" },
+      ],
+    },
+    {
+      name: "Input",
+      fields: [
+        { name: "InputSource", type: "Single-Line Text" },
+        { name: "InputData", type: "Multi-Line Text" },
+      ],
+    },
+    {
+      name: "Results",
+      fields: [
+        { name: "AnalysisResult", type: "Multi-Line Text" },
+        { name: "GeneratedCode", type: "Multi-Line Text" },
+      ],
+    },
+    {
+      name: "Summary",
+      fields: [
+        { name: "TotalTokensUsed", type: "Integer" },
+        { name: "TotalDuration", type: "Integer" },
+        { name: "ComponentCount", type: "Integer" },
+      ],
+    },
+  ],
+};
+
+export const COMPONENT_FORGE_RUN_STEP_TEMPLATE: TemplateConfig = {
+  name: "ComponentForge RunStep",
+  parentId: SITECORE_IDS.TEMPLATES.USER_DEFINED,
+  parentPath: SITECORE_PATHS.TEMPLATES.COMPONENT_FORGE,
+  sections: [
+    {
+      name: "Step Info",
+      fields: [
+        { name: "StepName", type: "Single-Line Text" },
+        { name: "StepOrder", type: "Integer" },
+        { name: "Timestamp", type: "Datetime" },
+      ],
+    },
+    {
+      name: "AI Details",
+      fields: [
+        { name: "Model", type: "Single-Line Text" },
+        { name: "PromptTokens", type: "Integer" },
+        { name: "CompletionTokens", type: "Integer" },
+        { name: "TotalTokens", type: "Integer" },
+        { name: "Duration", type: "Integer" },
+        { name: "RawPrompt", type: "Multi-Line Text" },
+        { name: "RawResponse", type: "Multi-Line Text" },
+      ],
     },
   ],
 };
@@ -58,5 +113,6 @@ export const INSTALLATION_TEMPLATES: TemplateConfig[] = [
   COMPONENT_FORGE_FOLDER_TEMPLATE,
   COMPONENT_FORGE_SETTINGS_TEMPLATE,
   COMPONENT_FORGE_LOGS_FOLDER_TEMPLATE,
-  COMPONENT_FORGE_LOG_ENTRY_TEMPLATE,
+  COMPONENT_FORGE_RUN_TEMPLATE,
+  COMPONENT_FORGE_RUN_STEP_TEMPLATE,
 ];
