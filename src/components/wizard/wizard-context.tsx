@@ -35,7 +35,7 @@ interface WizardContextValue {
 const WizardContext = createContext<WizardContextValue | null>(null);
 
 const STEPS: WizardStep[] = [
-  { id: "tenant-selector", label: "Select Tenant" },
+  { id: "tenant-selector", label: "Select Tenant And Site" },
   { id: "installation-wizard", label: "Installation" },
   { id: "component-input", label: "Component Input" },
   { id: "analysis-results", label: "Results" },
