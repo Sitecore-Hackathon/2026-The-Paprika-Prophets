@@ -24,7 +24,7 @@ export function TenantSiteHeader() {
             <span className="text-sm font-medium text-muted-foreground">
               Selected Site:
             </span>
-            <Badge>{selectedSite.displayName ?? selectedSite.name}</Badge>
+            <Badge>{selectedSite.name}</Badge>
           </>
         )}
       </div>
