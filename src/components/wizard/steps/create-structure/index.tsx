@@ -106,7 +106,7 @@ function Inner() {
           Back
         </Button>
         <Button onClick={goNext} disabled={!allDone}>
-          Finish
+          Next: Code Generation
         </Button>
       </div>
     </div>
