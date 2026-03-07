@@ -35,6 +35,7 @@ export function ComponentInput() {
   const [htmlContent, setHtmlContent] = useState("");
 
   const openAiApiKey = (data.openAiApiKey as string) ?? "";
+  const analysisModel = (data.analysisLlmModel as string) || "";
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,6 +87,7 @@ export function ComponentInput() {
         headers: {
           "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
           ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
+          ...(analysisModel ? { "x-analysis-model": analysisModel } : {}),
         },
       });
 
@@ -123,6 +125,7 @@ export function ComponentInput() {
           "Content-Type": "application/json",
           "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
           ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
+          ...(analysisModel ? { "x-analysis-model": analysisModel } : {}),
         },
         body: JSON.stringify({ html: htmlContent }),
       });

@@ -62,7 +62,7 @@ export function CodeGeneration() {
 
   /* Read from wizard context */
   const openAiApiKey = (data.openAiApiKey as string) ?? "";
-  const codingModel = (data.codingLlmModel as string) || "gpt-4.1";
+  const codingModel = (data.codingLlmModel as string) || "gpt-5.3-codex";
   const editedComponents = data.editedComponents as Record<string, unknown>[] | undefined;
   const templateGroups = data.templateGroups as Record<string, unknown>[] | undefined;
 
@@ -342,7 +342,7 @@ export function CodeGeneration() {
       )}
 
       {/* Raw output debug */}
-      {rawOutput && (
+      {process.env.NODE_ENV === "development" && rawOutput && (
         <Collapsible>
           <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
             ▶ Debug: Raw LLM Output

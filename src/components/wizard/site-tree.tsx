@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMarketplaceClient } from "@/components/providers/marketplace";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { AuthoringService } from "@/lib/services/authoring-service";
@@ -132,7 +132,10 @@ export function SiteTree({ rootPath = "/sitecore", selectedPath = null, onSelect
   const { selectedTenant } = useTenantContext();
 
   const sitecoreContextId = selectedTenant?.context?.preview ?? "";
-  const authoring = new AuthoringService(client, sitecoreContextId);
+  const authoring = useMemo(
+    () => new AuthoringService(client, sitecoreContextId),
+    [client, sitecoreContextId],
+  );
 
   const [roots, setRoots] = useState<SitecoreItem[]>([]);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());

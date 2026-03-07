@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
   }
   const openai = new OpenAI({ apiKey });
 
+  /* ── Analysis model ──────────────────────────────────────── */
+  const model = request.headers.get("x-analysis-model") || "gpt-5-mini";
+
   try {
     const body = await request.json();
     const { html, feedback, previousResult } = body;
@@ -56,14 +59,14 @@ export async function POST(request: NextRequest) {
 
     // Call OpenAI API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model,
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      max_tokens: 4000,
+      max_completion_tokens: 8000,
       response_format: { type: "json_object" },
     });
 

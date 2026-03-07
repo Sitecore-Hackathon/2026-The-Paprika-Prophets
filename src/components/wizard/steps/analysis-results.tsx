@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useWizard } from "../wizard-context";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import {
@@ -21,7 +21,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { AnalysisLoader } from "../analysis-loader";
-import type { TemplateGroup } from "@/lib/types/component";
+import type {
+  ComponentField,
+  VariantDef,
+  SxaStyleDef,
+  AnalyzedComponent,
+  TemplateGroup,
+} from "@/lib/types/component";
+import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
 
 /* ── Utilities ─────────────────────────────────────────────────────── */
 
@@ -37,41 +44,9 @@ function dataUrlToBlob(dataUrl: string): Blob {
 
 /* ── Types ────────────────────────────────────────────────────────── */
 
-interface ComponentField {
-  name: string;
-  displayName: string;
-  type: string;
-  description: string;
-  required: boolean;
-  source: string;
-}
+// Types imported from @/lib/types/component
 
-const REFERENCE_FIELD_TYPES = new Set(["Treelist", "Multilist", "Droptree", "Droplink"]);
 
-interface VariantDef {
-  name: string;
-  description: string;
-}
-
-interface SxaStyleDef {
-  name: string;
-  options: string[];
-  description: string;
-}
-
-interface AnalyzedComponent {
-  componentName: string;
-  description: string;
-  visualLocation: string;
-  isListComponent: boolean;
-  childTemplateName: string | null;
-  isDatasourceFolder: boolean;
-  parentTemplateName: string | null;
-  fields: ComponentField[];
-  variants: VariantDef[];
-  sxaStyles: SxaStyleDef[];
-  suggestions: string;
-}
 
 /** A group of related templates: parent list + child + folder, or standalone */
 // TemplateGroup is imported from @/lib/types/component
@@ -333,11 +308,12 @@ export function AnalysisResults() {
   const templateGroups = useMemo(() => buildGroups(components), [components]);
 
   // Expand all groups by default on first render
-  useState(() => {
+  useEffect(() => {
     if (templateGroups.length > 0 && expandedGroups.size === 0) {
       setExpandedGroups(new Set(templateGroups.map((g) => g.id)));
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on initial grouping
+  }, [templateGroups]);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups((prev) => {
@@ -483,6 +459,7 @@ export function AnalysisResults() {
           headers: {
             "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
             ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
+            ...((data.analysisLlmModel as string) ? { "x-analysis-model": data.analysisLlmModel as string } : {}),
           },
         });
         json = await response.json();
@@ -495,6 +472,7 @@ export function AnalysisResults() {
             "Content-Type": "application/json",
             "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
             ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
+            ...((data.analysisLlmModel as string) ? { "x-analysis-model": data.analysisLlmModel as string } : {}),
           },
           body: JSON.stringify({ html: htmlContent, feedback, previousResult: analysisRaw }),
         });
@@ -906,20 +884,22 @@ export function AnalysisResults() {
       </Card>
 
       {/* ═══ Debug: Raw JSON ═══ */}
-      <Collapsible>
-        <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
-          ▶ Debug: Raw JSON
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <Card className="mt-2">
-            <CardContent className="pt-4">
-              <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs font-mono max-h-96">
-                {JSON.stringify({ groups: templateGroups, components }, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        </CollapsibleContent>
-      </Collapsible>
+      {process.env.NODE_ENV === "development" && (
+        <Collapsible>
+          <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
+            ▶ Debug: Raw JSON
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <Card className="mt-2">
+              <CardContent className="pt-4">
+                <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs font-mono max-h-96">
+                  {JSON.stringify({ groups: templateGroups, components }, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* ═══ Navigation ═══ */}
       <div className="flex justify-between">

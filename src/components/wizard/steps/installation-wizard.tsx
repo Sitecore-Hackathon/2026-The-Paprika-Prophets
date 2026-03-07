@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { SITECORE_PATHS } from "@/lib/installation/constants";
 import {
   InstallationService,
   type InstallationStatus,
@@ -74,7 +75,7 @@ export function InstallationWizard() {
     try {
       const authoring = service.getAuthoringService();
       const settingsPath =
-        "/sitecore/system/Modules/Component Forge/Settings";
+        SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Settings";
       const item = await authoring.getItemWithFields(settingsPath);
       if (item) {
         const fields = item.fields?.nodes ?? [];

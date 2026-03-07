@@ -7,16 +7,20 @@ export type ComponentField = {
   source: string;
 };
 
+
+
+export const REFERENCE_FIELD_TYPES = new Set(["Treelist", "Multilist", "Droptree", "Droplink"]);
+
 export type VariantDef = {
   name: string;
   description: string;
-};
+}
 
 export type SxaStyleDef = {
   name: string;
   options: string[];
   description: string;
-};
+}
 
 export type AnalyzedComponent = {
   componentName: string;
@@ -30,9 +34,8 @@ export type AnalyzedComponent = {
   variants: VariantDef[];
   sxaStyles: SxaStyleDef[];
   suggestions: string;
-};
+}
 
-/** A group of related templates: parent list + child + folder, or standalone */
 export type TemplateGroup = {
   id: string;
   label: string;

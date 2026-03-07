@@ -21,7 +21,7 @@ export const COMPONENT_FORGE_SETTINGS: ItemConfigWithTemplateName = {
   language: "en",
   fields: [
     { name: "OpenAI API Key", value: "" },
-    { name: "Analysis LLM Model", value: "gpt-4o" },
+    { name: "Analysis LLM Model", value: "gpt-5-mini" },
     { name: "Coding LLM Model", value: "gpt-5.3-codex" },
     { name: "Module Version", value: "1.0.0" },
   ],

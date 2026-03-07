@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
   }
 
   /* Coding model — falls back to a sensible default */
-  const model = request.headers.get("x-coding-model") || "gpt-4.1";
+  const model = request.headers.get("x-coding-model") || "gpt-5.3-codex";
   const isCodexModel = model.toLowerCase().includes("codex");
 
   const openai = new OpenAI({ apiKey });
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: sanitizeForPrompt(userPrompt) },
         ],
-        max_tokens: 8000,
+        max_completion_tokens: 8000,
         temperature: 0.2,
       });
       code = response.choices[0].message.content ?? "";
