@@ -133,6 +133,7 @@ export function ComponentInput() {
       setStepData("analysisResult", json.analysis);
       setStepData("analysisRaw", json.raw);
       setStepData("sourceType", "html");
+      setStepData("htmlContent", htmlContent);
       goNext();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Analysis failed");

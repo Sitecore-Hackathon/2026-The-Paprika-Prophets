@@ -33,15 +33,21 @@ STEP 2 — LIST vs STANDALONE
 ═══════════════════════════════════════════════
 CRITICAL DISTINCTION:
 • A LIST/REPEATER has 2+ visually similar items that share the same structure (e.g. 3 news cards, 4 team members).
-  → Always produce THREE templates: Parent (container), Child (single item), Folder (datasource).
+  → Always produce THREE templates: Parent (container), Child (single item), Folder (shared data folder).
 • A STANDALONE component appears once and has its own unique layout (e.g. a hero, a single CTA banner, a single featured article).
   → Produce ONE template.
 
-For LIST COMPONENTS:
-- PARENT template: isListComponent=true, holds section-level fields (section heading, section description, "View All" link, etc.)
-  IMPORTANT: If the section has a visible heading like "Trending News", "Our Team", "Latest Posts", that heading is a field on the PARENT template (e.g. "SectionTitle" of type Single-Line Text).
-- CHILD template: holds fields for ONE repeated item. Set childTemplateName on the parent, set parentTemplateName on the child.
-- FOLDER template: isDatasourceFolder=true, no data fields, just a container. Set parentTemplateName referencing the list parent.
+For LIST COMPONENTS (reusable-item pattern):
+- PARENT template: isListComponent=true, holds section-level fields (section heading, description, "View All" link, etc.)
+  IMPORTANT: The parent MUST include an "Items" field of type Treelist (or Multilist) that references child items.
+  This allows the same child items to be reused across different list components.
+  If the section has a visible heading like "Trending News", "Our Team", that heading is a field on the PARENT (e.g. "SectionTitle" of type Single-Line Text).
+  Set childTemplateName to the child template name.
+- CHILD template: holds fields for ONE repeated item. Set parentTemplateName to the parent name.
+  The child is stored in a shared data folder and referenced via the parent's Items field.
+- FOLDER template: isDatasourceFolder=true, no data fields — a shared container for child items.
+  Set parentTemplateName referencing the list parent.
+  Insert options on this folder allow creating child items inside it.
 
 For STANDALONE COMPONENTS:
 - isListComponent=false, childTemplateName=null, isDatasourceFolder=false, parentTemplateName=null
@@ -119,12 +125,12 @@ WORKED EXAMPLE (for reference, do NOT copy)
 Imagine a screenshot with: a "Latest News" section (heading + 3 news cards each with image, title, date, excerpt) and a "Membership Promo" hero on the right with large background image, category tag, date, and headline.
 
 Expected output would have 4 components:
-1. LatestNewsList (isListComponent=true, childTemplateName="NewsCard") — fields: SectionTitle (Single-Line Text), ViewAllLink (General Link)
+1. LatestNewsList (isListComponent=true, childTemplateName="NewsCard") — fields: SectionTitle (Single-Line Text), ViewAllLink (General Link), Items (Treelist — references NewsCard items)
 2. NewsCard (parentTemplateName="LatestNewsList") — fields: CardImage (Image), ArticleTitle (Single-Line Text), PublishDate (Date), Excerpt (Multi-Line Text), ArticleLink (General Link), Author (Single-Line Text)
-3. NewsCardsFolder (isDatasourceFolder=true, parentTemplateName="LatestNewsList") — no data fields
+3. NewsCardsFolder (isDatasourceFolder=true, parentTemplateName="LatestNewsList") — no data fields. Insert options: NewsCard. Content editors create NewsCard items here, then reference them from any LatestNewsList via the Items field.
 4. MembershipPromo (standalone) — fields: BackgroundImage (Image), CategoryTag (Single-Line Text), PromoDate (Date), Headline (Single-Line Text), CallToActionLink (General Link)
 
-Notice: "Latest News" heading → field on the parent, NOT on the child. The promo is standalone, NOT part of the list.
+Notice: "Latest News" heading → field on the parent, NOT on the child. The Items field on the parent references child items — the same NewsCard can be used in multiple lists. The promo is standalone, NOT part of the list.
 
 ═══════════════════════════════════════════════
 FINAL CHECKLIST before returning:
@@ -133,6 +139,7 @@ FINAL CHECKLIST before returning:
 □ Every image maps to an Image field
 □ Every clickable element maps to a General Link field
 □ Section headings are on the PARENT, not the child
+□ List parents have an "Items" field of type Treelist or Multilist referencing child items
 □ List components have exactly 3 entries (parent + child + folder)
 □ Standalone components are NOT marked as lists
 □ All field names are PascalCase with no spaces
@@ -181,11 +188,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: fileError }, { status: 400 });
     }
 
+    // Read optional reanalysis fields
+    const feedback = (formData.get("feedback") as string) ?? "";
+    const previousResult = (formData.get("previousResult") as string) ?? "";
+
     // Convert file to base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64Image = buffer.toString("base64");
     const mimeType = file.type || "image/png";
+
+    // Build prompt — append feedback context when reanalyzing
+    let prompt = ANALYSIS_PROMPT;
+    if (feedback) {
+      prompt += `\n\n═══════════════════════════════════════════════\nREANALYSIS INSTRUCTIONS\n═══════════════════════════════════════════════\nThe user reviewed a previous analysis and has the following feedback.\nAdjust your analysis accordingly while still following all rules above.\n\nPrevious result:\n${previousResult}\n\nUser feedback:\n${feedback}`;
+    }
 
     // Call OpenAI Vision API
     const response = await openai.chat.completions.create({
@@ -194,7 +211,7 @@ export async function POST(request: NextRequest) {
         {
           role: "user",
           content: [
-            { type: "text", text: ANALYSIS_PROMPT },
+            { type: "text", text: prompt },
             {
               type: "image_url",
               image_url: {
