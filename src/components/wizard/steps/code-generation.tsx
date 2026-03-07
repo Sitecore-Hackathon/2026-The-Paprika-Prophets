@@ -197,7 +197,6 @@ export function CodeGeneration() {
                   <th className="px-3 py-2 text-left font-semibold">Folder</th>
                   <th className="px-3 py-2 text-left font-semibold">Type</th>
                   <th className="px-3 py-2 text-left font-semibold">Fields</th>
-                  <th className="px-3 py-2 text-left font-semibold">Variants</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -213,9 +212,6 @@ export function CodeGeneration() {
                       </Badge>
                     </td>
                     <td className="px-3 py-2">{(comp.fields as unknown[])?.length ?? 0}</td>
-                    <td className="px-3 py-2 text-xs">
-                      {((comp.variants as { name: string }[]) ?? []).map((v) => v.name).join(", ")}
-                    </td>
                   </tr>
                 ))}
               </tbody>

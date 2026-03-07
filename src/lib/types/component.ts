@@ -3,24 +3,12 @@ export type ComponentField = {
   displayName: string;
   type: string;
   description: string;
-  required: boolean;
   source: string;
 };
 
 
 
 export const REFERENCE_FIELD_TYPES = new Set(["Treelist", "Multilist", "Droptree", "Droplink"]);
-
-export type VariantDef = {
-  name: string;
-  description: string;
-}
-
-export type SxaStyleDef = {
-  name: string;
-  options: string[];
-  description: string;
-}
 
 export type AnalyzedComponent = {
   componentName: string;
@@ -31,8 +19,6 @@ export type AnalyzedComponent = {
   isDatasourceFolder: boolean;
   parentTemplateName: string | null;
   fields: ComponentField[];
-  variants: VariantDef[];
-  sxaStyles: SxaStyleDef[];
   suggestions: string;
 }
 

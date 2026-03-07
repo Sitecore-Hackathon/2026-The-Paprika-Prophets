@@ -1,4 +1,4 @@
-import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
+﻿import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 
 export const DEV_COMPONENTS: AnalyzedComponent[] = [
     {
@@ -15,7 +15,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Section Title",
           "type": "Single-Line Text",
           "description": "The title for the case studies section.",
-          "required": false,
           "source": ""
         },
         {
@@ -23,17 +22,9 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Items",
           "type": "Treelist",
           "description": "References to CaseStudyCard items.",
-          "required": true,
           "source": "query:./*"
         }
       ],
-      "variants": [
-        {
-          "name": "Default",
-          "description": "Standard appearance"
-        }
-      ],
-      "sxaStyles": [],
       "suggestions": "Ensure that the section heading is customizable."
     },
     {
@@ -50,7 +41,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Logo",
           "type": "Image",
           "description": "Logo of the company.",
-          "required": true,
           "source": ""
         },
         {
@@ -58,7 +48,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Company Name",
           "type": "Single-Line Text",
           "description": "Name of the company.",
-          "required": true,
           "source": ""
         },
         {
@@ -66,7 +55,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Headline",
           "type": "Single-Line Text",
           "description": "Main headline for the case study.",
-          "required": true,
           "source": ""
         },
         {
@@ -74,17 +62,9 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Description",
           "type": "Multi-Line Text",
           "description": "Brief description of the case study.",
-          "required": true,
           "source": ""
         }
       ],
-      "variants": [
-        {
-          "name": "Default",
-          "description": "Standard card layout"
-        }
-      ],
-      "sxaStyles": [],
       "suggestions": "Consider making the entire card clickable with a link to the full case study."
     },
     {
@@ -96,8 +76,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
       "isDatasourceFolder": true,
       "parentTemplateName": "CaseStudiesList",
       "fields": [],
-      "variants": [],
-      "sxaStyles": [],
       "suggestions": "Organize case study cards within this folder."
     },
     {
@@ -114,7 +92,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Headline",
           "type": "Single-Line Text",
           "description": "Primary headline text.",
-          "required": true,
           "source": ""
         },
         {
@@ -122,7 +99,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Sub-headline",
           "type": "Single-Line Text",
           "description": "Supporting text beneath the headline.",
-          "required": false,
           "source": ""
         },
         {
@@ -130,7 +106,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "Background Image",
           "type": "Image",
           "description": "Full-width background image.",
-          "required": false,
           "source": ""
         },
         {
@@ -138,15 +113,9 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "displayName": "CTA Link",
           "type": "General Link",
           "description": "Primary call-to-action button link.",
-          "required": false,
           "source": ""
         }
       ],
-      "variants": [
-        { "name": "Default", "description": "Standard full-width hero" },
-        { "name": "Centered", "description": "Centered text layout" }
-      ],
-      "sxaStyles": [],
       "suggestions": "Consider adding a dark/light overlay toggle for the background image."
     },
     {
@@ -158,8 +127,6 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
       "isDatasourceFolder": true,
       "parentTemplateName": "HeroBanner",
       "fields": [],
-      "variants": [],
-      "sxaStyles": [],
       "suggestions": "Organizes hero banner content items per page or section."
     }
 ];

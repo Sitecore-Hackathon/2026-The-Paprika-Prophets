@@ -95,16 +95,6 @@ Use these for inline editing support:
 - General Link → <ContentSdkLink field={fields.X} />
 - Date → <DateField field={fields.X} />
 
-═══ VARIANTS ══════════════════════════════════════════════
-Each variant is a NAMED EXPORT in the same file.
-The "Default" variant is always \`export const Default\`.
-Additional variants are additional named exports:
-\`\`\`tsx
-export const Default = (props: MyComponentProps): JSX.Element => { ... };
-export const TextOnly = (props: MyComponentProps): JSX.Element => { ... };
-export const ImageLeft = (props: MyComponentProps): JSX.Element => { ... };
-\`\`\`
-
 ═══ LIST COMPONENTS ═══════════════════════════════════════
 For list components with a Treelist/Multilist "Items" field:
 - The Items field value is an array of referenced items.

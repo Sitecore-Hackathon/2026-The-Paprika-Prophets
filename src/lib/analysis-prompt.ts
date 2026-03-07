@@ -21,9 +21,11 @@ COMMON VISUAL PATTERNS to recognize:
 
 const LIST_VS_STANDALONE = `CRITICAL DISTINCTION:
 • A LIST/REPEATER has 2+ visually similar items that share the same structure (e.g. 3 news cards, 4 team members).
-  → Always produce THREE templates: Parent (container), Child (single item), Folder (shared data folder).
+  → Always produce FOUR templates: Parent + Parent Folder + Child + Child Folder.
 • A STANDALONE component appears once and has its own unique layout (e.g. a hero, a single CTA banner, a single featured article).
-  → Produce ONE template.
+  → Produce TWO templates: the component template + its datasource folder.
+
+EVERY component template (standalone, list parent, OR list child) MUST have its own dedicated datasource folder template.
 
 For LIST COMPONENTS (reusable-item pattern):
 - PARENT template: isListComponent=true, holds section-level fields (section heading, description, "View All" link, etc.)
@@ -31,15 +33,18 @@ For LIST COMPONENTS (reusable-item pattern):
   This allows the same child items to be reused across different list components.
   If the section has a visible heading like "Trending News", "Our Team", that heading is a field on the PARENT (e.g. "SectionTitle" of type Single-Line Text).
   Set childTemplateName to the child template name.
+- PARENT FOLDER template: isDatasourceFolder=true, no data fields — stores datasource items for the parent component.
+  Set parentTemplateName referencing the list parent.
+  Insert options on this folder allow creating parent datasource items inside it.
 - CHILD template: holds fields for ONE repeated item. Set parentTemplateName to the parent name.
   The child is stored in a shared data folder and referenced via the parent's Items field.
-- FOLDER template: isDatasourceFolder=true, no data fields — a shared container for child items.
-  Set parentTemplateName referencing the list parent.
+- CHILD FOLDER template: isDatasourceFolder=true, no data fields — a shared container for child items.
+  Set parentTemplateName referencing the child template name.
   Insert options on this folder allow creating child items inside it.
 
 For STANDALONE COMPONENTS:
 - isListComponent=false, childTemplateName=null, isDatasourceFolder=false, parentTemplateName=null
-- IMPORTANT: Even standalone components need a data folder for their datasource items.
+- IMPORTANT: Every standalone component needs a datasource folder for its datasource items.
   → Produce TWO entries: the component template + a folder (isDatasourceFolder=true).`;
 
 const FIELD_RULES = `For each piece of visible content in the component, create a field:
@@ -63,10 +68,7 @@ COMMON MISTAKES to avoid:
 ✗ Forgetting author/source on article cards
 ✗ Marking a single featured/hero block as a list when it appears only once`;
 
-const VARIANTS_AND_STYLES = `Look for visual differences between instances of the SAME logical component:
-- VARIANT = structurally different HTML (e.g. a card with image-on-top vs a card with image-on-left — different DOM layout)
-- STYLE = CSS-level difference only (e.g. dark vs light background, left vs center alignment, with/without border)
-If you see only one instance of a component, still add a "Default" variant.`;
+
 
 const JSON_SCHEMA = `Return your response as JSON with this structure:
 {
@@ -84,15 +86,8 @@ const JSON_SCHEMA = `Return your response as JSON with this structure:
           "name": "FieldNameInPascalCase",
           "displayName": "Field Display Name",
           "type": "Single-Line Text|Multi-Line Text|Rich Text|Image|General Link|Date|Datetime|Checkbox|Integer|Number|Treelist|Multilist|Droplink|Droptree|File|Name Value List",
-          "description": "Purpose of this field",
-          "required": true
+          "description": "Purpose of this field"
         }
-      ],
-      "variants": [
-        { "name": "Default", "description": "Standard appearance" }
-      ],
-      "sxaStyles": [
-        { "name": "StyleName", "options": ["Option1", "Option2"], "description": "What this style controls" }
       ],
       "suggestions": "Additional notes for this component, e.g. rendering logic, content author tips"
     }
@@ -102,25 +97,26 @@ const JSON_SCHEMA = `Return your response as JSON with this structure:
 
 const WORKED_EXAMPLE = `Imagine a page with: a "Latest News" section (heading + 3 news cards each with image, title, date, excerpt) and a "Membership Promo" hero on the right with large background image, category tag, date, and headline.
 
-Expected output would have 5 components:
+Expected output would have 6 components:
 1. LatestNewsList (isListComponent=true, childTemplateName="NewsCard") — fields: SectionTitle (Single-Line Text), ViewAllLink (General Link), Items (Treelist — references NewsCard items)
-2. NewsCard (parentTemplateName="LatestNewsList") — fields: CardImage (Image), ArticleTitle (Single-Line Text), PublishDate (Date), Excerpt (Multi-Line Text), ArticleLink (General Link), Author (Single-Line Text)
-3. NewsCardsFolder (isDatasourceFolder=true, parentTemplateName="LatestNewsList") — no data fields. Insert options: NewsCard. Content editors create NewsCard items here, then reference them from any LatestNewsList via the Items field.
-4. MembershipPromo (standalone) — fields: BackgroundImage (Image), CategoryTag (Single-Line Text), PromoDate (Date), Headline (Single-Line Text), CallToActionLink (General Link)
-5. MembershipPromoFolder (isDatasourceFolder=true, parentTemplateName="MembershipPromo") — no data fields. Stores MembershipPromo datasource items.
+2. LatestNewsListFolder (isDatasourceFolder=true, parentTemplateName="LatestNewsList") — no data fields. Stores datasource items for the LatestNewsList parent component. Insert options: LatestNewsList.
+3. NewsCard (parentTemplateName="LatestNewsList") — fields: CardImage (Image), ArticleTitle (Single-Line Text), PublishDate (Date), Excerpt (Multi-Line Text), ArticleLink (General Link), Author (Single-Line Text)
+4. NewsCardsFolder (isDatasourceFolder=true, parentTemplateName="NewsCard") — no data fields. Insert options: NewsCard. Content editors create NewsCard items here, then reference them from any LatestNewsList via the Items field.
+5. MembershipPromo (standalone) — fields: BackgroundImage (Image), CategoryTag (Single-Line Text), PromoDate (Date), Headline (Single-Line Text), CallToActionLink (General Link)
+6. MembershipPromoFolder (isDatasourceFolder=true, parentTemplateName="MembershipPromo") — no data fields. Stores MembershipPromo datasource items.
 
-Notice: "Latest News" heading → field on the parent, NOT on the child. The Items field on the parent references child items — the same NewsCard can be used in multiple lists. The promo is standalone, NOT part of the list. Every component (including standalone) has its own data folder.`;
+Notice: "Latest News" heading → field on the parent, NOT on the child. The Items field on the parent references child items — the same NewsCard can be used in multiple lists. The promo is standalone, NOT part of the list. EVERY component template has its own datasource folder — the list parent (LatestNewsListFolder), the list child (NewsCardsFolder), and the standalone (MembershipPromoFolder).`;
 
 const FINAL_CHECKLIST = `□ Every visible text element maps to a field
 □ Every image maps to an Image field
 □ Every clickable element maps to a General Link field
 □ Section headings are on the PARENT, not the child
 □ List parents have an "Items" field of type Treelist or Multilist referencing child items
-□ List components have exactly 3 entries (parent + child + folder)
+□ List components have exactly 4 entries (parent + parent folder + child + child folder)
 □ Standalone components have 2 entries (template + folder)
+□ EVERY component template has its own dedicated datasource folder (isDatasourceFolder=true)
 □ All field names are PascalCase with no spaces
 □ FieldName names are specific (ArticleTitle not Title, when appropriate)
-□ Variants and styles are listed (at minimum "Default" variant)
 □ visualLocation is descriptive enough to locate the component`;
 
 /* ── Assembled prompts ─────────────────────────────────────────── */
@@ -150,12 +146,7 @@ STEP 3 — FIELDS FOR EACH TEMPLATE
 ${FIELD_RULES}
 
 ═══════════════════════════════════════════════
-STEP 4 — VARIANTS AND SXA STYLES
-═══════════════════════════════════════════════
-${VARIANTS_AND_STYLES}
-
-═══════════════════════════════════════════════
-STEP 5 — JSON OUTPUT
+STEP 4 — JSON OUTPUT
 ═══════════════════════════════════════════════
 ${JSON_SCHEMA}
 
@@ -198,12 +189,7 @@ HTML-specific field hints:
 • Content inside <p>, <h1>–<h6>, <span> → Text fields (choose appropriate type)
 
 ═══════════════════════════════════════════════
-STEP 4 — VARIANTS AND SXA STYLES
-═══════════════════════════════════════════════
-${VARIANTS_AND_STYLES}
-
-═══════════════════════════════════════════════
-STEP 5 — JSON OUTPUT
+STEP 4 — JSON OUTPUT
 ═══════════════════════════════════════════════
 ${JSON_SCHEMA}
 
