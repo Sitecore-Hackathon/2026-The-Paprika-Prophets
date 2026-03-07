@@ -217,12 +217,12 @@ export class InstallationService {
             ...template,
             parentId: this.templateFolderId || template.parentId,
           };
-          const templateId =
+          const result =
             await this.authoringService.createTemplate(templateWithParent);
-          if (templateId) {
-            this.templateIdMap.set(template.name, templateId);
+          if (result) {
+            this.templateIdMap.set(template.name, result.templateId);
             step.status = "completed";
-            step.result = templateId;
+            step.result = result.templateId;
           } else {
             throw new Error("Failed to create template");
           }
