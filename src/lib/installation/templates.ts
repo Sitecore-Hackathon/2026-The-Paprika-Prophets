@@ -60,13 +60,11 @@ export const COMPONENT_FORGE_RUN_TEMPLATE: TemplateConfig = {
       name: "Input",
       fields: [
         { name: "InputSource", type: "Single-Line Text" },
-        { name: "InputData", type: "Multi-Line Text" },
       ],
     },
     {
       name: "Results",
       fields: [
-        { name: "AnalysisResult", type: "Multi-Line Text" },
         { name: "GeneratedCode", type: "Multi-Line Text" },
       ],
     },
@@ -102,8 +100,6 @@ export const COMPONENT_FORGE_RUN_STEP_TEMPLATE: TemplateConfig = {
         { name: "CompletionTokens", type: "Integer" },
         { name: "TotalTokens", type: "Integer" },
         { name: "Duration", type: "Integer" },
-        { name: "RawPrompt", type: "Multi-Line Text" },
-        { name: "RawResponse", type: "Multi-Line Text" },
       ],
     },
   ],

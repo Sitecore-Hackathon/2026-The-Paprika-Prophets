@@ -5,7 +5,7 @@ import { sanitizeForPrompt } from "@/lib/validation";
 
 /* ── System prompt for code generation ─────────────────────────── */
 
-const SYSTEM_PROMPT = `You are a Sitecore XM Cloud / Content SDK expert.
+const SYSTEM_PROMPT = `You are a SitecoreAI (formerly: XM Cloud) / Content SDK expert.
 You generate production-ready Next.js component code that follows the @sitecore-content-sdk/nextjs patterns exactly.
 
 ═══ IMPORTS ═══════════════════════════════════════════════
@@ -95,20 +95,39 @@ Use these for inline editing support:
 - General Link → <ContentSdkLink field={fields.X} />
 - Date → <DateField field={fields.X} />
 
-═══ VARIANTS ══════════════════════════════════════════════
-Each variant is a NAMED EXPORT in the same file.
-The "Default" variant is always \`export const Default\`.
-Additional variants are additional named exports:
-\`\`\`tsx
-export const Default = (props: MyComponentProps): JSX.Element => { ... };
-export const TextOnly = (props: MyComponentProps): JSX.Element => { ... };
-export const ImageLeft = (props: MyComponentProps): JSX.Element => { ... };
-\`\`\`
-
 ═══ LIST COMPONENTS ═══════════════════════════════════════
 For list components with a Treelist/Multilist "Items" field:
-- The Items field value is an array of referenced items.
-- Map over items and render the child component for each.
+- Do NOT generate a separate rendering file for the child template.
+- The parent component owns all rendering. Inside it, iterate over the Items array.
+- For each item, render the child template's fields inline using the same rendering helpers (<Text />, <ContentSdkImage />, etc.).
+- Define a ChildFields interface (or inline type) for the child item's fields.
+- Example pattern:
+\`\`\`tsx
+// inside the parent component
+interface NewsCardFields {
+  CardImage: ImageField;
+  ArticleTitle: Field<string>;
+  PublishDate: Field<string>;
+  ArticleLink: LinkField;
+}
+
+interface Fields {
+  SectionTitle: Field<string>;
+  Items: { fields: NewsCardFields }[];
+}
+
+// in JSX:
+{fields.Items?.map((item, i) => (
+  <div key={i} className="list-item">
+    <ContentSdkImage field={item.fields.CardImage} />
+    <Text field={item.fields.ArticleTitle} />
+    <DateField field={item.fields.PublishDate} />
+    <ContentSdkLink field={item.fields.ArticleLink} />
+  </div>
+))}
+\`\`\`
+
+IMPORTANT: Only generate files for parent/standalone components. Child templates are rendered inline by their parent.
 
 ═══ FILE / FOLDER STRUCTURE ════════════════════════════════
 Each component lives in its own folder under src/components/.
@@ -128,7 +147,19 @@ Start each block with the relative file path as a comment:
 ...code...
 \`\`\`
 
-Return raw code only. No surrounding prose.`;
+Return raw code only. No surrounding prose.
+
+═══ DESIGN HINTS ══════════════════════════════════════════
+Each component may include a "designHints" object captured from the original screenshot analysis.
+These describe the visual appearance: layout, colors, typography, spacing, borders, shadows, etc.
+
+When designHints are present, use them to make the generated code match the original design as closely as possible:
+- If styling system is "tailwind": translate designHints into Tailwind utility classes (e.g. colors → bg-[#hex] text-[#hex], spacing → p-8 gap-6, borders → rounded-lg border, shadows → shadow-md, layout → flex/grid classes)
+- If styling system is "bootstrap": translate into Bootstrap classes (e.g. layout → row/col, spacing → p-4 mb-3, shadows → shadow-sm)
+- If styling system is "css-modules": generate CSS module rules with the exact colors, sizes, and spacing from designHints
+- If styling system is "markup-only": use BEM class names that encode the intent (e.g. .hero-banner--dark-overlay, .card-grid--3-col) so a designer can implement them
+
+Always prioritize translating the designHints faithfully. If a hint says "rounded-lg ~8px", use rounded-lg (Tailwind) or border-radius: 8px (CSS). If colors are given as hex values, use them directly.`;
 
 /* ── Options interface ─────────────────────────────────────────── */
 
@@ -187,6 +218,9 @@ export async function POST(request: NextRequest) {
     const userPrompt = buildUserPrompt(components, groups, options as CodeGenOptions);
 
     let code: string;
+    let promptTokens = 0;
+    let completionTokens = 0;
+    const t0 = Date.now();
 
     if (isCodexModel) {
       /* Codex models use the Responses API */
@@ -198,6 +232,8 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.output_text ?? "";
+      promptTokens = response.usage?.input_tokens ?? 0;
+      completionTokens = response.usage?.output_tokens ?? 0;
     } else {
       /* Chat models use the Chat Completions API */
       const response = await openai.chat.completions.create({
@@ -210,9 +246,25 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.choices[0].message.content ?? "";
+      promptTokens = response.usage?.prompt_tokens ?? 0;
+      completionTokens = response.usage?.completion_tokens ?? 0;
     }
+    const durationMs = Date.now() - t0;
 
-    return NextResponse.json({ success: true, code, model });
+    return NextResponse.json({
+      success: true,
+      code,
+      model,
+      metadata: {
+        stepName: "generate-code",
+        model,
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Code generation failed";

@@ -2,7 +2,7 @@
  * Logging service — collects AI call metadata on the client side and
  * persists Run + RunStep items to Sitecore via the Authoring API.
  *
- * Usage pattern (not plugged in yet):
+ * Flow:
  *   1. API routes return `AiCallMetadata` alongside their normal response.
  *   2. Client accumulates metadata into a `RunLog` via `createRunLog()` / `addStep()`.
  *   3. At the end of the wizard, call `saveRunToSitecore()` to persist.
@@ -22,8 +22,6 @@ export interface AiCallMetadata {
   totalTokens: number;
   durationMs: number;
   timestamp: string; // ISO 8601
-  rawPrompt?: string;
-  rawResponse?: string;
 }
 
 /** A single step within a run — mirrors the RunStep Sitecore template. */
@@ -36,8 +34,6 @@ export interface RunStep {
   completionTokens: number;
   totalTokens: number;
   durationMs: number;
-  rawPrompt?: string;
-  rawResponse?: string;
 }
 
 /** A full run — mirrors the Run Sitecore template. */
@@ -47,8 +43,6 @@ export interface RunLog {
   runStatus: "in-progress" | "completed" | "failed" | "partial";
   userName: string;
   inputSource: "screenshot" | "html" | "manual";
-  inputData: string;
-  analysisResult: string;
   generatedCode: string;
   totalTokensUsed: number;
   totalDuration: number;
@@ -69,8 +63,6 @@ export function createRunLog(
     runStatus: "in-progress",
     userName,
     inputSource,
-    inputData: "",
-    analysisResult: "",
     generatedCode: "",
     totalTokensUsed: 0,
     totalDuration: 0,
@@ -92,8 +84,6 @@ export function addStep(run: RunLog, metadata: AiCallMetadata): RunLog {
     completionTokens: metadata.completionTokens,
     totalTokens: metadata.totalTokens,
     durationMs: metadata.durationMs,
-    rawPrompt: metadata.rawPrompt,
-    rawResponse: metadata.rawResponse,
   };
 
   return {
@@ -108,7 +98,6 @@ export function addStep(run: RunLog, metadata: AiCallMetadata): RunLog {
 export function finalizeRun(
   run: RunLog,
   results: {
-    analysisResult?: string;
     generatedCode?: string;
     componentCount?: number;
     status?: RunLog["runStatus"];
@@ -117,7 +106,6 @@ export function finalizeRun(
   return {
     ...run,
     runStatus: results.status ?? "completed",
-    analysisResult: results.analysisResult ?? run.analysisResult,
     generatedCode: results.generatedCode ?? run.generatedCode,
     componentCount: results.componentCount ?? run.componentCount,
   };
@@ -158,12 +146,10 @@ export async function saveRunToSitecore(
       language: "en",
       fields: [
         { name: "RunId", value: run.runId },
-        { name: "RunDate", value: run.runDate },
+        { name: "RunDate", value: toSitecoreDatetime(run.runDate) },
         { name: "RunStatus", value: run.runStatus },
         { name: "UserName", value: run.userName },
         { name: "InputSource", value: run.inputSource },
-        { name: "InputData", value: truncateForSitecore(run.inputData) },
-        { name: "AnalysisResult", value: truncateForSitecore(run.analysisResult) },
         { name: "GeneratedCode", value: truncateForSitecore(run.generatedCode) },
         { name: "TotalTokensUsed", value: String(run.totalTokensUsed) },
         { name: "TotalDuration", value: String(run.totalDuration) },
@@ -187,14 +173,12 @@ export async function saveRunToSitecore(
         fields: [
           { name: "StepName", value: step.stepName },
           { name: "StepOrder", value: String(step.stepOrder) },
-          { name: "Timestamp", value: step.timestamp },
+          { name: "Timestamp", value: toSitecoreDatetime(step.timestamp) },
           { name: "Model", value: step.model },
           { name: "PromptTokens", value: String(step.promptTokens) },
           { name: "CompletionTokens", value: String(step.completionTokens) },
           { name: "TotalTokens", value: String(step.totalTokens) },
           { name: "Duration", value: String(step.durationMs) },
-          { name: "RawPrompt", value: truncateForSitecore(step.rawPrompt ?? "") },
-          { name: "RawResponse", value: truncateForSitecore(step.rawResponse ?? "") },
         ],
       });
     }
@@ -210,6 +194,11 @@ export async function saveRunToSitecore(
 }
 
 /* ── Utilities ─────────────────────────────────────────────────── */
+
+/** Convert ISO 8601 to Sitecore Datetime format: 20260307T193914Z */
+function toSitecoreDatetime(iso: string): string {
+  return iso.replace(/[-:.]/g, "").replace(/(\d{8}T\d{6}).*/, "$1Z");
+}
 
 /** Truncate large text to avoid GraphQL payload issues. */
 function truncateForSitecore(text: string, maxLength: number = 50_000): string {

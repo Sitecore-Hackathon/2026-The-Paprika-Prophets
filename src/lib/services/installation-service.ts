@@ -62,6 +62,11 @@ export class InstallationService {
     return this.authoringService;
   }
 
+  /** Look up a template ID by its display name (populated after checkInstallation/install). */
+  getTemplateId(name: string): string | undefined {
+    return this.templateIdMap.get(name);
+  }
+
   async checkInstallation(): Promise<InstallationStatus> {
     try {
       const templateFolderExists = await this.checkTemplateFolderExists();
@@ -217,12 +222,12 @@ export class InstallationService {
             ...template,
             parentId: this.templateFolderId || template.parentId,
           };
-          const templateId =
+          const result =
             await this.authoringService.createTemplate(templateWithParent);
-          if (templateId) {
-            this.templateIdMap.set(template.name, templateId);
+          if (result) {
+            this.templateIdMap.set(template.name, result.templateId);
             step.status = "completed";
-            step.result = templateId;
+            step.result = result.templateId;
           } else {
             throw new Error("Failed to create template");
           }

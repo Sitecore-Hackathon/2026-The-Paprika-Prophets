@@ -23,10 +23,9 @@ import {
 import { AnalysisLoader } from "../analysis-loader";
 import type {
   ComponentField,
-  VariantDef,
-  SxaStyleDef,
   AnalyzedComponent,
   TemplateGroup,
+  DesignHints,
 } from "@/lib/types/component";
 import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
 import { useRunLog } from "@/components/providers/run-log-provider";
@@ -98,9 +97,8 @@ function normalizeComponents(raw: Record<string, unknown>): AnalyzedComponent[] 
     isDatasourceFolder: Boolean(c.isDatasourceFolder ?? false),
     parentTemplateName: c.parentTemplateName ? String(c.parentTemplateName) : null,
     fields: normalizeFields(c.fields),
-    variants: normalizeVariants(c.variants),
-    sxaStyles: normalizeSxaStyles(c.sxaStyles),
     suggestions: normalizeSuggestions(c.suggestions),
+    designHints: normalizeDesignHints(c.designHints),
   }));
 
   // Auto-populate source for Treelist/Multilist fields on list parents
@@ -124,26 +122,7 @@ function normalizeFields(raw: unknown): ComponentField[] {
     displayName: String(f.displayName ?? f.name ?? ""),
     type: String(f.type ?? "Single-Line Text"),
     description: String(f.description ?? ""),
-    required: Boolean(f.required ?? false),
     source: String(f.source ?? ""),
-  }));
-}
-
-function normalizeVariants(raw: unknown): VariantDef[] {
-  if (!Array.isArray(raw)) return [];
-  return (raw as unknown[]).map((v) =>
-    typeof v === "string"
-      ? { name: v, description: "" }
-      : { name: String((v as Record<string, unknown>).name ?? ""), description: String((v as Record<string, unknown>).description ?? "") }
-  );
-}
-
-function normalizeSxaStyles(raw: unknown): SxaStyleDef[] {
-  if (!Array.isArray(raw)) return [];
-  return (raw as Record<string, unknown>[]).map((s) => ({
-    name: String(s.name ?? ""),
-    options: Array.isArray(s.options) ? (s.options as string[]) : [],
-    description: String(s.description ?? ""),
   }));
 }
 
@@ -153,8 +132,22 @@ function normalizeSuggestions(raw: unknown): string {
   return "";
 }
 
+const DESIGN_HINT_KEYS: (keyof DesignHints)[] = [
+  "layout", "colors", "typography", "spacing", "borders", "shadows", "backgroundStyle", "iconography", "responsiveHint",
+];
+
+function normalizeDesignHints(raw: unknown): DesignHints | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const hints = {} as Record<string, string>;
+  for (const key of DESIGN_HINT_KEYS) {
+    hints[key] = String(obj[key] ?? "");
+  }
+  return hints as unknown as DesignHints;
+}
+
 function emptyField(): ComponentField {
-  return { name: "", displayName: "", type: "Single-Line Text", description: "", required: false, source: "" };
+  return { name: "", displayName: "", type: "Single-Line Text", description: "", source: "" };
 }
 
 /* ── Grouping logic ───────────────────────────────────────────────── */
@@ -329,7 +322,7 @@ export function AnalysisResults() {
 
   /* ── CRUD helpers ──────────────────────────────────────────── */
 
-  const updateField = (compIdx: number, fieldIdx: number, key: keyof ComponentField, value: string | boolean) => {
+  const updateField = (compIdx: number, fieldIdx: number, key: keyof ComponentField, value: string) => {
     setComponents((prev) => {
       const next = [...prev];
       next[compIdx] = { ...next[compIdx], fields: [...next[compIdx].fields] };
@@ -358,62 +351,6 @@ export function AnalysisResults() {
     setComponents((prev) => {
       const next = [...prev];
       next[compIdx] = { ...next[compIdx], componentName: name };
-      return next;
-    });
-  };
-
-  /* ── Variant CRUD ──────────────────────────────────────────── */
-
-  const updateVariant = (compIdx: number, varIdx: number, key: keyof VariantDef, value: string) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      const variants = [...next[compIdx].variants];
-      variants[varIdx] = { ...variants[varIdx], [key]: value };
-      next[compIdx] = { ...next[compIdx], variants };
-      return next;
-    });
-  };
-
-  const removeVariant = (compIdx: number, varIdx: number) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      next[compIdx] = { ...next[compIdx], variants: next[compIdx].variants.filter((_, i) => i !== varIdx) };
-      return next;
-    });
-  };
-
-  const addVariant = (compIdx: number) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      next[compIdx] = { ...next[compIdx], variants: [...next[compIdx].variants, { name: "", description: "" }] };
-      return next;
-    });
-  };
-
-  /* ── SXA Style CRUD ────────────────────────────────────────── */
-
-  const updateStyle = (compIdx: number, styleIdx: number, key: keyof SxaStyleDef, value: string | string[]) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      const sxaStyles = [...next[compIdx].sxaStyles];
-      sxaStyles[styleIdx] = { ...sxaStyles[styleIdx], [key]: value };
-      next[compIdx] = { ...next[compIdx], sxaStyles };
-      return next;
-    });
-  };
-
-  const removeStyle = (compIdx: number, styleIdx: number) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      next[compIdx] = { ...next[compIdx], sxaStyles: next[compIdx].sxaStyles.filter((_, i) => i !== styleIdx) };
-      return next;
-    });
-  };
-
-  const addStyle = (compIdx: number) => {
-    setComponents((prev) => {
-      const next = [...prev];
-      next[compIdx] = { ...next[compIdx], sxaStyles: [...next[compIdx].sxaStyles, { name: "", options: [], description: "" }] };
       return next;
     });
   };
@@ -684,7 +621,6 @@ export function AnalysisResults() {
                               <th className="px-3 py-2 text-left text-xs font-semibold w-44">Type</th>
                               <th className="px-3 py-2 text-left text-xs font-semibold">Source</th>
                               <th className="px-3 py-2 text-left text-xs font-semibold">Description</th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold w-12">Req</th>
                               <th className="px-3 py-2 w-8" />
                             </tr>
                           </thead>
@@ -724,14 +660,6 @@ export function AnalysisResults() {
                                 <td className="px-3 py-2">
                                   <Input value={field.description} onChange={(e) => updateField(compIdx, fIdx, "description", e.target.value)} className="h-8 text-sm" />
                                 </td>
-                                <td className="px-3 py-2 text-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={field.required}
-                                    onChange={(e) => updateField(compIdx, fIdx, "required", e.target.checked)}
-                                    className="h-4 w-4"
-                                  />
-                                </td>
                                 <td className="px-3 py-2">
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeField(compIdx, fIdx)}>×</Button>
                                 </td>
@@ -749,97 +677,6 @@ export function AnalysisResults() {
                     {/* Add field */}
                     <div className="flex justify-end mt-2">
                       <Button size="sm" variant="outline" onClick={() => addField(compIdx)}>+ Add Field</Button>
-                    </div>
-
-                    {/* Variants */}
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold flex items-center gap-2">
-                          Variants
-                          <Badge colorScheme="primary" size="sm">{comp.variants.length}</Badge>
-                        </h4>
-                        <Button size="sm" variant="outline" onClick={() => addVariant(compIdx)}>+ Add Variant</Button>
-                      </div>
-                      {comp.variants.length > 0 ? (
-                        <div className="border rounded-lg overflow-hidden">
-                          <table className="w-full">
-                            <thead className="bg-muted">
-                              <tr>
-                                <th className="px-3 py-2 text-left text-xs font-semibold">Name</th>
-                                <th className="px-3 py-2 text-left text-xs font-semibold">Description</th>
-                                <th className="px-3 py-2 w-8" />
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {comp.variants.map((v, vIdx) => (
-                                <tr key={vIdx} className="hover:bg-muted/30">
-                                  <td className="px-3 py-2">
-                                    <Input value={v.name} onChange={(e) => updateVariant(compIdx, vIdx, "name", e.target.value)} className="h-8 text-sm font-mono" />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input value={v.description} onChange={(e) => updateVariant(compIdx, vIdx, "description", e.target.value)} className="h-8 text-sm" />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeVariant(compIdx, vIdx)}>×</Button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground italic bg-muted/30 rounded-lg p-3">No variants defined.</div>
-                      )}
-                    </div>
-
-                    {/* SXA Styles */}
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold flex items-center gap-2">
-                          SXA Styles
-                          <Badge colorScheme="warning" size="sm">{comp.sxaStyles.length}</Badge>
-                        </h4>
-                        <Button size="sm" variant="outline" onClick={() => addStyle(compIdx)}>+ Add Style</Button>
-                      </div>
-                      {comp.sxaStyles.length > 0 ? (
-                        <div className="border rounded-lg overflow-hidden">
-                          <table className="w-full">
-                            <thead className="bg-muted">
-                              <tr>
-                                <th className="px-3 py-2 text-left text-xs font-semibold">Name</th>
-                                <th className="px-3 py-2 text-left text-xs font-semibold">Options (comma-separated)</th>
-                                <th className="px-3 py-2 text-left text-xs font-semibold">Description</th>
-                                <th className="px-3 py-2 w-8" />
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {comp.sxaStyles.map((s, sIdx) => (
-                                <tr key={sIdx} className="hover:bg-muted/30">
-                                  <td className="px-3 py-2">
-                                    <Input value={s.name} onChange={(e) => updateStyle(compIdx, sIdx, "name", e.target.value)} className="h-8 text-sm font-mono" />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      value={s.options.join(", ")}
-                                      onChange={(e) => updateStyle(compIdx, sIdx, "options", e.target.value.split(",").map((o) => o.trim()).filter(Boolean))}
-                                      placeholder="Option1, Option2, …"
-                                      className="h-8 text-sm"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input value={s.description} onChange={(e) => updateStyle(compIdx, sIdx, "description", e.target.value)} className="h-8 text-sm" />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeStyle(compIdx, sIdx)}>×</Button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground italic bg-muted/30 rounded-lg p-3">No SXA styles defined.</div>
-                      )}
                     </div>
                   </div>
                 );

@@ -3,7 +3,6 @@ export type ComponentField = {
   displayName: string;
   type: string;
   description: string;
-  required: boolean;
   source: string;
 };
 
@@ -11,16 +10,17 @@ export type ComponentField = {
 
 export const REFERENCE_FIELD_TYPES = new Set(["Treelist", "Multilist", "Droptree", "Droplink"]);
 
-export type VariantDef = {
-  name: string;
-  description: string;
-}
-
-export type SxaStyleDef = {
-  name: string;
-  options: string[];
-  description: string;
-}
+export type DesignHints = {
+  layout: string;
+  colors: string;
+  typography: string;
+  spacing: string;
+  borders: string;
+  shadows: string;
+  backgroundStyle: string;
+  iconography: string;
+  responsiveHint: string;
+};
 
 export type AnalyzedComponent = {
   componentName: string;
@@ -31,9 +31,8 @@ export type AnalyzedComponent = {
   isDatasourceFolder: boolean;
   parentTemplateName: string | null;
   fields: ComponentField[];
-  variants: VariantDef[];
-  sxaStyles: SxaStyleDef[];
   suggestions: string;
+  designHints: DesignHints | null;
 }
 
 export type TemplateGroup = {

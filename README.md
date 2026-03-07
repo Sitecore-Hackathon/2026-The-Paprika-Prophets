@@ -10,12 +10,12 @@
 ⟹ Best Marketplace App for Sitecore AI
 
 ## Description
-**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings, variants, styles, and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes — not hours — with a human in the loop.
+**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes — not hours — with a human in the loop.
 
 ### Component Forge Features
 
 - **AI-powered component recognition** — Analyze a screenshot or HTML snippet to automatically identify one or more components, their fields, variants, and SXA styles.
-- **Iterative analysis refinement** — Fine-tune and replay the analysis phase to improve template, variant, and styling outcomes before committing to Sitecore.
+- **Iterative analysis refinement** — Fine-tune and replay the analysis phase to improve template outcomes before committing to Sitecore.
 - **Full Sitecore item creation** — Create all necessary Sitecore items in one step: templates, renderings, sample data, and a sample page — powered by the Agent API.
 - **Content SDK code generation** — Generate production-ready Next.js component code compatible with `@sitecore-content-sdk/nextjs`, with copy-pastable terminal commands for quick scaffolding into your repository.
 - **Split model selection** — Choose different AI models for analysis and code generation independently, so you can use the best-suited model for each task (e.g. a vision model for analysis, a coding model for generation).
@@ -199,3 +199,5 @@ The app generates **Content SDK–compatible Next.js component code** based on t
 - **Enhanced logging:** Logging is currently stored as Sitecore items under a simplified Run/RunStep structure. We explored using external storage (e.g. Supabase, Vercel KV) for richer audit trails and better query capabilities, but opted against it to keep the setup simple and avoid adding extra dependencies for judges.
 - **Figma integration:** Importing designs directly from Figma was on our roadmap, but we prioritized the screenshot and HTML analysis flows first. Figma's free-tier API rate limits made exploration impractical within the hackathon timeframe.
 - **Multi-provider AI support:** The app currently uses OpenAI exclusively. A natural next step would be to add support for other providers such as Google Gemini and Anthropic Claude, giving users the flexibility to choose the model that best fits their needs and budget.
+- **Workflow Setup:** Currently the page and datasources are created without workflow. Wizard can incorporate finding exisiting workflows and assign to templates. 
+- **Add Variants and Styles support:** Originally we planned to include Variants and Style creation with AI suggestion. 

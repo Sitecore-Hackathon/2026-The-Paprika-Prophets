@@ -1,8 +1,18 @@
 import type { ItemConfig } from "../types";
 
+/** Escape a string for embedding inside a GraphQL string literal (double-quoted). */
+function escapeGraphQL(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}
+
 export const buildCreateItemMutation = (config: ItemConfig) => {
   const fields = config.fields
-    ? config.fields.map((f) => `{ name: "${f.name}", value: "${f.value}" }`).join("\n        ")
+    ? config.fields.map((f) => `{ name: "${escapeGraphQL(f.name)}", value: "${escapeGraphQL(f.value)}" }`).join("\n        ")
     : "";
 
   const fieldsBlock = fields ? `fields: [\n        ${fields}\n      ]` : "";
@@ -11,7 +21,7 @@ export const buildCreateItemMutation = (config: ItemConfig) => {
     mutation {
       createItem(
         input: {
-          name: "${config.name}"
+          name: "${escapeGraphQL(config.name)}"
           templateId: "${config.templateId}"
           parent: "${config.parentId}"
           language: "${config.language || "en"}"
@@ -53,7 +63,7 @@ export const buildUpdateItemFieldsMutation = (
   fields: Array<{ name: string; value: string }>,
 ) => {
   const fieldUpdates = fields
-    .map((f) => `{ name: "${f.name}", value: "${f.value}" }`)
+    .map((f) => `{ name: "${escapeGraphQL(f.name)}", value: "${escapeGraphQL(f.value)}" }`)
     .join("\n        ");
 
   return `
