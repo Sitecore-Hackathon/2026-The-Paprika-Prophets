@@ -31,3 +31,18 @@ export type AnalyzedComponent = {
   sxaStyles: SxaStyleDef[];
   suggestions: string;
 };
+
+export type TemplateGroup = {
+  id: string;
+  label: string;
+  type: "list" | "standalone";
+  members: { role: "parent" | "child" | "folder" | "standalone"; idx: number }[];
+  insertOptions: string[];
+};
+
+export const REFERENCE_FIELD_TYPES = new Set([
+  "Treelist",
+  "Multilist",
+  "Droptree",
+  "Droplink",
+]);

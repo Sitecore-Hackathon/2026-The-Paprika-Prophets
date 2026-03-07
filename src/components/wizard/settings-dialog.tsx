@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -40,89 +40,56 @@ interface SettingsDialogProps {
 const SETTINGS_PATH =
   SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Settings";
 
-function AnalysisModelSelectContent() {
-  return (
-    <>
-      <SelectGroup>
-        <SelectLabel>GPT-5 Series</SelectLabel>
-        <SelectItem value="gpt-5.4">GPT-5.4</SelectItem>
-        <SelectItem value="gpt-5.4-pro">GPT-5.4 Pro</SelectItem>
-        <SelectItem value="gpt-5.2">GPT-5.2</SelectItem>
-        <SelectItem value="gpt-5.2-pro">GPT-5.2 Pro</SelectItem>
-        <SelectItem value="gpt-5.1">GPT-5.1</SelectItem>
-        <SelectItem value="gpt-5">GPT-5</SelectItem>
-        <SelectItem value="gpt-5-pro">GPT-5 Pro</SelectItem>
-        <SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
-        <SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
-      </SelectGroup>
-      <SelectSeparator />
-      <SelectGroup>
-        <SelectLabel>Reasoning</SelectLabel>
-        <SelectItem value="o3-pro">o3-pro</SelectItem>
-        <SelectItem value="o3">o3</SelectItem>
-        <SelectItem value="o4-mini">o4-mini</SelectItem>
-        <SelectItem value="o3-mini">o3-mini</SelectItem>
-        <SelectItem value="o1">o1</SelectItem>
-      </SelectGroup>
-      <SelectSeparator />
-      <SelectGroup>
-        <SelectLabel>GPT-4 Series</SelectLabel>
-        <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
-        <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
-        <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
-        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-        <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-        <SelectItem value="gpt-4">GPT-4</SelectItem>
-      </SelectGroup>
-    </>
-  );
-}
+/* ── Model catalogue ───────────────────────────────────────────── */
 
-function CodingModelSelectContent() {
+type ModelEntry = { value: string; label: string };
+type ModelGroup = { label: string; models: ModelEntry[] };
+
+const GPT5_MODELS: ModelEntry[] = [
+  { value: "gpt-5.4", label: "GPT-5.4" },
+  { value: "gpt-5.4-pro", label: "GPT-5.4 Pro" },
+  { value: "gpt-5.2", label: "GPT-5.2" },
+  { value: "gpt-5.2-pro", label: "GPT-5.2 Pro" },
+  { value: "gpt-5.1", label: "GPT-5.1" },
+  { value: "gpt-5", label: "GPT-5" },
+  { value: "gpt-5-pro", label: "GPT-5 Pro" },
+  { value: "gpt-5-mini", label: "GPT-5 Mini" },
+  { value: "gpt-5-nano", label: "GPT-5 Nano" },
+];
+
+const CODEX_MODELS: ModelEntry[] = [
+  { value: "gpt-5.3-codex", label: "GPT-5.3 Codex" },
+  { value: "gpt-5.2-codex", label: "GPT-5.2 Codex" },
+  { value: "gpt-5.1-codex", label: "GPT-5.1 Codex" },
+  { value: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex Mini" },
+  { value: "gpt-5-codex", label: "GPT-5 Codex" },
+];
+
+const ANALYSIS_MODEL_GROUPS: ModelGroup[] = [
+  { label: "GPT-5 Series", models: GPT5_MODELS },
+];
+
+const CODING_MODEL_GROUPS: ModelGroup[] = [
+  { label: "Codex (Optimised for Code)", models: CODEX_MODELS },
+  { label: "GPT-5 Series", models: GPT5_MODELS },
+];
+
+function ModelSelectContent({ groups }: { groups: ModelGroup[] }) {
   return (
     <>
-      <SelectGroup>
-        <SelectLabel>Codex (Optimised for Code)</SelectLabel>
-        <SelectItem value="gpt-5.3-codex">GPT-5.3 Codex</SelectItem>
-        <SelectItem value="gpt-5.2-codex">GPT-5.2 Codex</SelectItem>
-        <SelectItem value="gpt-5.1-codex">GPT-5.1 Codex</SelectItem>
-        <SelectItem value="gpt-5.1-codex-mini">GPT-5.1 Codex Mini</SelectItem>
-        <SelectItem value="gpt-5-codex">GPT-5 Codex</SelectItem>
-      </SelectGroup>
-      <SelectSeparator />
-      <SelectGroup>
-        <SelectLabel>GPT-5 Series</SelectLabel>
-        <SelectItem value="gpt-5.4">GPT-5.4</SelectItem>
-        <SelectItem value="gpt-5.4-pro">GPT-5.4 Pro</SelectItem>
-        <SelectItem value="gpt-5.2">GPT-5.2</SelectItem>
-        <SelectItem value="gpt-5.2-pro">GPT-5.2 Pro</SelectItem>
-        <SelectItem value="gpt-5.1">GPT-5.1</SelectItem>
-        <SelectItem value="gpt-5">GPT-5</SelectItem>
-        <SelectItem value="gpt-5-pro">GPT-5 Pro</SelectItem>
-        <SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
-        <SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
-      </SelectGroup>
-      <SelectSeparator />
-      <SelectGroup>
-        <SelectLabel>Reasoning</SelectLabel>
-        <SelectItem value="o3-pro">o3-pro</SelectItem>
-        <SelectItem value="o3">o3</SelectItem>
-        <SelectItem value="o4-mini">o4-mini</SelectItem>
-        <SelectItem value="o3-mini">o3-mini</SelectItem>
-        <SelectItem value="o1">o1</SelectItem>
-      </SelectGroup>
-      <SelectSeparator />
-      <SelectGroup>
-        <SelectLabel>GPT-4 Series</SelectLabel>
-        <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
-        <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
-        <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
-        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-        <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-        <SelectItem value="gpt-4">GPT-4</SelectItem>
-      </SelectGroup>
+      {groups.map((group, gi) => (
+        <Fragment key={group.label}>
+          {gi > 0 && <SelectSeparator />}
+          <SelectGroup>
+            <SelectLabel>{group.label}</SelectLabel>
+            {group.models.map((m) => (
+              <SelectItem key={m.value} value={m.value}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </Fragment>
+      ))}
     </>
   );
 }
@@ -134,7 +101,7 @@ export function SettingsDialog({
   onSaved,
 }: SettingsDialogProps) {
   const [openAiApiKey, setOpenAiApiKey] = useState("");
-  const [analysisLlmModel, setAnalysisLlmModel] = useState("gpt-4o");
+  const [analysisLlmModel, setAnalysisLlmModel] = useState("gpt-5-mini");
   const [codingLlmModel, setCodingLlmModel] = useState("gpt-5.3-codex");
   const [settingsItemId, setSettingsItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -158,7 +125,7 @@ export function SettingsDialog({
         );
         if (apiKeyField) setOpenAiApiKey(apiKeyField.value);
         if (analysisModelField)
-          setAnalysisLlmModel(analysisModelField.value || "gpt-4o");
+          setAnalysisLlmModel(analysisModelField.value || "gpt-5-mini");
         if (codingModelField)
           setCodingLlmModel(codingModelField.value || "gpt-5.3-codex");
       }
@@ -246,7 +213,7 @@ export function SettingsDialog({
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <AnalysisModelSelectContent />
+                  <ModelSelectContent groups={ANALYSIS_MODEL_GROUPS} />
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
@@ -264,7 +231,7 @@ export function SettingsDialog({
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <CodingModelSelectContent />
+                  <ModelSelectContent groups={CODING_MODEL_GROUPS} />
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
