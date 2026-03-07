@@ -30,6 +30,11 @@
 
 - **Sitecore AI** (formerly XM Cloud) — the app is built for Sitecore AI and requires an active environment.
 - **OpenAI API key** — required for AI-powered screenshot/HTML analysis and code generation.
+- **Content SDK CLI** — the generated code follows `@sitecore-content-sdk/nextjs` patterns. Install the CLI and its required peer dependency globally so you can scaffold components into your Next.js project:
+  ```bash
+  npm install -g typescript @sitecore-content-sdk/cli
+  ```
+  Verify with `sitecore-tools --version`. See the [official installation guide](https://doc.sitecore.com/sai/en/developers/content-sdk/install-the-content-sdk-cli.html) for details.
 
 > **Judges:** If you need a test API key, please reach out to **Mihály** and one will be provided.
 
