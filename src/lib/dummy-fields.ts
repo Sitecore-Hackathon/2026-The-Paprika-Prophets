@@ -1,37 +1,71 @@
-import Chance from "chance";
+import type { Faker } from "@faker-js/faker";
+import {
+  fakerAR, fakerCS_CZ, fakerDA, fakerDE, fakerEL, fakerEN,
+  fakerES, fakerFI, fakerFR, fakerHE, fakerHR, fakerHU,
+  fakerID_ID, fakerIT, fakerJA, fakerKO, fakerNB_NO, fakerNL,
+  fakerPL, fakerPT_BR, fakerRO, fakerRU, fakerSK, fakerSV,
+  fakerTH, fakerTR, fakerUK, fakerVI, fakerZH_CN,
+} from "@faker-js/faker";
 
-const chance = new Chance();
-
-function singleLineText(language: string): string {
-  void language;
-  return chance.sentence({ words: chance.integer({ min: 3, max: 8 }) }).replace(/\.$/, "");
+/** Returns the Faker instance for the Sitecore language code (e.g. "en-US", "de-DE", "zh-CN"). */
+function getfaker(language: string): Faker {
+  const lang = language.toLowerCase();
+  if (lang.startsWith("ar")) return fakerAR;
+  if (lang.startsWith("cs")) return fakerCS_CZ;
+  if (lang.startsWith("da")) return fakerDA;
+  if (lang.startsWith("de")) return fakerDE;
+  if (lang.startsWith("el")) return fakerEL;
+  if (lang.startsWith("es")) return fakerES;
+  if (lang.startsWith("fi")) return fakerFI;
+  if (lang.startsWith("fr")) return fakerFR;
+  if (lang.startsWith("he")) return fakerHE;
+  if (lang.startsWith("hr")) return fakerHR;
+  if (lang.startsWith("hu")) return fakerHU;
+  if (lang.startsWith("id")) return fakerID_ID;
+  if (lang.startsWith("it")) return fakerIT;
+  if (lang.startsWith("ja")) return fakerJA;
+  if (lang.startsWith("ko")) return fakerKO;
+  if (lang.startsWith("nb") || lang.startsWith("no")) return fakerNB_NO;
+  if (lang.startsWith("nl")) return fakerNL;
+  if (lang.startsWith("pl")) return fakerPL;
+  if (lang.startsWith("pt")) return fakerPT_BR;
+  if (lang.startsWith("ro")) return fakerRO;
+  if (lang.startsWith("ru")) return fakerRU;
+  if (lang.startsWith("sk")) return fakerSK;
+  if (lang.startsWith("sv")) return fakerSV;
+  if (lang.startsWith("th")) return fakerTH;
+  if (lang.startsWith("tr")) return fakerTR;
+  if (lang.startsWith("uk")) return fakerUK;
+  if (lang.startsWith("vi")) return fakerVI;
+  if (lang.startsWith("zh")) return fakerZH_CN;
+  return fakerEN;
 }
 
-function multiLineText(language: string): string {
-  void language;
-  const count = chance.integer({ min: 2, max: 3 });
-  return Array.from({ length: count }, () => chance.sentence({ words: chance.integer({ min: 6, max: 15 }) })).join(" ");
+/* ── Field generators ───────────────────────────────────────────────── */
+
+function singleLineText(f: Faker): string {
+  return f.lorem.sentence({ min: 3, max: 8 }).replace(/\.$/, "");
 }
 
-function richText(language: string): string {
-  void language;
-  return `<p>${multiLineText(language)}</p>\n<p>${multiLineText(language)}</p>`;
+function multiLineText(f: Faker): string {
+  return f.lorem.paragraphs({ min: 1, max: 2 });
 }
 
-function headline(language: string): string {
-  void language;
-  return chance.capitalize(
-    chance.sentence({ words: chance.integer({ min: 3, max: 7 }) }).replace(/\.$/, ""),
-  );
+function richText(f: Faker): string {
+  return `<p>${f.lorem.paragraph()}</p>\n<p>${f.lorem.paragraph()}</p>`;
 }
 
-function numberValue(): string {
-  return String(chance.integer({ min: 1, max: 9999 }));
+function numberValue(f: Faker): string {
+  return String(f.number.int({ min: 1, max: 9999 }));
+}
+
+function integerValue(f: Faker): string {
+  return String(f.number.int({ min: 0, max: 1000 }));
 }
 
 // Sitecore datetime format: yyyyMMddTHHmmssZ
-function datetimeValue(): string {
-  const d = chance.date({ year: new Date().getFullYear() }) as Date;
+function datetimeValue(f: Faker): string {
+  const d = f.date.recent({ days: 365 });
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
@@ -39,67 +73,67 @@ function datetimeValue(): string {
   );
 }
 
-function dateValue(): string {
-  const d = chance.date({ year: new Date().getFullYear() }) as Date;
+function dateValue(f: Faker): string {
+  const d = f.date.recent({ days: 365 });
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T000000Z`;
 }
 
-function generalLink(): string {
-  const url = chance.url({ protocol: "https", domain: chance.domain() });
-  const text = chance.capitalize(chance.word({ syllables: 2 }));
+function generalLink(f: Faker): string {
+  const url = f.internet.url();
+  const text = f.word.words(2);
   return `<link text='${text}' linktype='external' url='${url}' target='_blank' />`;
 }
 
-function checkboxValue(): string {
-  return chance.bool() ? "1" : "0";
+function checkboxValue(f: Faker): string {
+  return f.datatype.boolean() ? "1" : "0";
 }
 
-function integerValue(): string {
-  return String(chance.integer({ min: 0, max: 1000 }));
-}
+/* ── Public API ─────────────────────────────────────────────────────── */
 
-/** Returns a readable dummy value for a Sitecore field. Field name heuristics take precedence over type. */
+/** Returns a locale-aware dummy value for a Sitecore field type. */
 export function generateDummyFieldValue(
   fieldType: string,
   language = "en",
 ): string {
+  const f = getfaker(language);
   const type = fieldType.toLowerCase().trim();
 
   switch (type) {
     case "single-line text":
-      return singleLineText(language);
+      return singleLineText(f);
 
     case "multi-line text":
-      return multiLineText(language);
+      return multiLineText(f);
 
     case "rich text":
-      return richText(language);
+      return richText(f);
 
     case "number":
-      return numberValue();
+      return numberValue(f);
 
     case "integer":
-      return integerValue();
+      return integerValue(f);
 
     case "datetime":
-      return datetimeValue();
+      return datetimeValue(f);
 
     case "date":
-      return dateValue();
+      return dateValue(f);
 
     case "checkbox":
-      return checkboxValue();
+      return checkboxValue(f);
 
     case "general link":
-      return generalLink();
+      return generalLink(f);
 
     case "image":
-      return `<image mediaid='{04DAD0FD-DB66-4070-881F-17264CA257E1}' alt='${singleLineText(language)}'/>`;
+      return `<image mediaid='{04DAD0FD-DB66-4070-881F-17264CA257E1}' alt='${singleLineText(f)}'/>`;
+
     case "file":
       return "";
 
-    // Require item GUIDs – leave blank
+    // Require item GUIDs – leave blank so they don't break validation
     case "droplink":
     case "droptree":
     case "multilist":
@@ -108,6 +142,6 @@ export function generateDummyFieldValue(
       return "";
 
     default:
-      return singleLineText(language);
+      return singleLineText(f);
   }
 }

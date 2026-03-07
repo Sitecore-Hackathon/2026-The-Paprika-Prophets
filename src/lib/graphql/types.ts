@@ -56,6 +56,7 @@ export interface FieldConfig {
   name: string;
   displayName?: string;
   type: string;
+  source?: string;
   value?: string;
 }
 

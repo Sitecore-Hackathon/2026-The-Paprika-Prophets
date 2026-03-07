@@ -11,7 +11,6 @@ import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { TemplateConfig } from "@/lib/graphql/types";
 import type { AuthoringService } from "@/lib/services/authoring-service";
-import { DEV_COMPONENTS, DEV_GROUPS } from "./dev-data";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
@@ -78,6 +77,7 @@ function buildDataTemplateConfig(
           name: f.name,
           displayName: f.displayName,
           type: f.type,
+          ...(f.source ? { source: f.source } : {}),
         })),
       },
     ],
@@ -221,18 +221,12 @@ export function TemplateStep() {
   const { authoringService, template, setTemplate, advanceSubStep } = useStructure();
 
   const components = useMemo<AnalyzedComponent[]>(
-    () =>
-      (data.editedComponents as AnalyzedComponent[])?.length
-        ? (data.editedComponents as AnalyzedComponent[])
-        : DEV_COMPONENTS,
+    () => (data.editedComponents as AnalyzedComponent[]) ?? [],
     [data.editedComponents],
   );
 
   const groups = useMemo<TemplateGroup[]>(
-    () =>
-      (data.templateGroups as TemplateGroup[])?.length
-        ? (data.templateGroups as TemplateGroup[])
-        : DEV_GROUPS,
+    () => (data.templateGroups as TemplateGroup[]) ?? [],
     [data.templateGroups],
   );
 

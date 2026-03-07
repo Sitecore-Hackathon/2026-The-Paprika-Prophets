@@ -8,7 +8,8 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
       const fieldsArray = section.fields
         .map((field) => {
           const title = field.displayName ? `, title: "${field.displayName}"` : "";
-          return `{ name: "${field.name}", type: "${field.type}"${title} }`;
+          const source = field.source ? `, source: "${field.source}"` : "";
+          return `{ name: "${field.name}", type: "${field.type}"${title}${source} }`;
         })
         .join("\n          ");
 
@@ -50,7 +51,7 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
       ) {
         itemTemplate {
           name
-          templateId
+          templateId (format: B)
           standardValuesItem(language: "${language}") {
             itemId
           }
