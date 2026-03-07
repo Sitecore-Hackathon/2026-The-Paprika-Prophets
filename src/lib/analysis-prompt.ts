@@ -68,6 +68,23 @@ COMMON MISTAKES to avoid:
 ✗ Forgetting author/source on article cards
 ✗ Marking a single featured/hero block as a list when it appears only once`;
 
+const DESIGN_HINTS = `For each component (excluding datasource folders), capture visual design cues directly from the screenshot.
+These hints will be used during code generation to reproduce the design as closely as possible.
+
+For each component, populate a "designHints" object with:
+- "layout": How the component is laid out (e.g. "flex row", "grid 3-col", "full-width centered", "sidebar float-right", "stacked vertical")
+- "colors": Key colors observed — background, text, accent, border (use approximate hex or descriptive names like "dark navy", "warm gray")
+- "typography": Font sizes/weights observed (e.g. "heading: large bold ~32px, body: regular ~14px, muted caption")
+- "spacing": Observed padding/margins/gaps (e.g. "generous padding ~40px, card gap ~24px, tight inner padding ~12px")
+- "borders": Border styles (e.g. "rounded-lg ~8px", "1px solid light-gray", "no visible border", "bottom divider")
+- "shadows": Shadow/elevation (e.g. "subtle card shadow", "no shadow", "elevated with drop-shadow")
+- "backgroundStyle": Background treatment (e.g. "solid white", "gradient dark-to-light", "background image with dark overlay", "transparent")
+- "iconography": Any icons observed (e.g. "arrow icon on CTA", "social media icons", "none visible")
+- "responsiveHint": Best guess at responsive behavior (e.g. "cards likely stack on mobile", "sidebar collapses below content", "full-width on all sizes")
+
+Be specific and grounded in what you SEE. Do not invent details — describe the actual visual treatment.
+Datasource folder templates should have designHints set to null.`;
+
 
 
 const JSON_SCHEMA = `Return your response as JSON with this structure:
@@ -89,7 +106,18 @@ const JSON_SCHEMA = `Return your response as JSON with this structure:
           "description": "Purpose of this field"
         }
       ],
-      "suggestions": "Additional notes for this component, e.g. rendering logic, content author tips"
+      "suggestions": "Additional notes for this component, e.g. rendering logic, content author tips",
+      "designHints": {
+        "layout": "flex row | grid 3-col | stacked vertical | ...",
+        "colors": "background: #f5f5f5, text: #1a1a1a, accent: #0066cc",
+        "typography": "heading: bold ~28px, body: regular ~14px",
+        "spacing": "padding ~32px, gap ~16px",
+        "borders": "rounded-lg, 1px solid #e0e0e0",
+        "shadows": "subtle card shadow",
+        "backgroundStyle": "solid white",
+        "iconography": "arrow icon on CTA button",
+        "responsiveHint": "cards stack on mobile"
+      }
     }
   ],
   "pageSuggestions": "Overall page structure commentary"
@@ -117,6 +145,7 @@ const FINAL_CHECKLIST = `□ Every visible text element maps to a field
 □ EVERY component template has its own dedicated datasource folder (isDatasourceFolder=true)
 □ All field names are PascalCase with no spaces
 □ FieldName names are specific (ArticleTitle not Title, when appropriate)
+□ designHints is populated for every non-folder component (null for folders)
 □ visualLocation is descriptive enough to locate the component`;
 
 /* ── Assembled prompts ─────────────────────────────────────────── */
@@ -146,7 +175,12 @@ STEP 3 — FIELDS FOR EACH TEMPLATE
 ${FIELD_RULES}
 
 ═══════════════════════════════════════════════
-STEP 4 — JSON OUTPUT
+STEP 4 — CAPTURE DESIGN HINTS (screenshot only)
+═══════════════════════════════════════════════
+${DESIGN_HINTS}
+
+═══════════════════════════════════════════════
+STEP 5 — JSON OUTPUT
 ═══════════════════════════════════════════════
 ${JSON_SCHEMA}
 

@@ -147,7 +147,19 @@ Start each block with the relative file path as a comment:
 ...code...
 \`\`\`
 
-Return raw code only. No surrounding prose.`;
+Return raw code only. No surrounding prose.
+
+═══ DESIGN HINTS ══════════════════════════════════════════
+Each component may include a "designHints" object captured from the original screenshot analysis.
+These describe the visual appearance: layout, colors, typography, spacing, borders, shadows, etc.
+
+When designHints are present, use them to make the generated code match the original design as closely as possible:
+- If styling system is "tailwind": translate designHints into Tailwind utility classes (e.g. colors → bg-[#hex] text-[#hex], spacing → p-8 gap-6, borders → rounded-lg border, shadows → shadow-md, layout → flex/grid classes)
+- If styling system is "bootstrap": translate into Bootstrap classes (e.g. layout → row/col, spacing → p-4 mb-3, shadows → shadow-sm)
+- If styling system is "css-modules": generate CSS module rules with the exact colors, sizes, and spacing from designHints
+- If styling system is "markup-only": use BEM class names that encode the intent (e.g. .hero-banner--dark-overlay, .card-grid--3-col) so a designer can implement them
+
+Always prioritize translating the designHints faithfully. If a hint says "rounded-lg ~8px", use rounded-lg (Tailwind) or border-radius: 8px (CSS). If colors are given as hex values, use them directly.`;
 
 /* ── Options interface ─────────────────────────────────────────── */
 

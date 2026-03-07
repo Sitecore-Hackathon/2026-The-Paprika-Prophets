@@ -25,7 +25,18 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "source": "query:./*"
         }
       ],
-      "suggestions": "Ensure that the section heading is customizable."
+      "suggestions": "Ensure that the section heading is customizable.",
+      "designHints": {
+        "layout": "grid 3-col",
+        "colors": "background: #ffffff, text: #1a1a1a, accent: #0066cc",
+        "typography": "heading: bold ~24px, body: regular ~14px",
+        "spacing": "section padding ~48px, card gap ~24px",
+        "borders": "cards have rounded-lg ~8px, 1px solid #e5e7eb",
+        "shadows": "subtle card shadow",
+        "backgroundStyle": "solid white",
+        "iconography": "none visible",
+        "responsiveHint": "cards likely stack on mobile"
+      }
     },
     {
       "componentName": "CaseStudyCard",
@@ -65,7 +76,18 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "source": ""
         }
       ],
-      "suggestions": "Consider making the entire card clickable with a link to the full case study."
+      "suggestions": "Consider making the entire card clickable with a link to the full case study.",
+      "designHints": {
+        "layout": "stacked vertical",
+        "colors": "background: #ffffff, text: #333333, logo area: #f9fafb",
+        "typography": "company name: semibold ~16px, headline: bold ~18px, description: regular ~14px muted",
+        "spacing": "inner padding ~20px, logo section padding ~16px",
+        "borders": "rounded-lg ~8px, 1px solid #e5e7eb",
+        "shadows": "subtle card shadow",
+        "backgroundStyle": "solid white",
+        "iconography": "company logo image",
+        "responsiveHint": "full-width on mobile"
+      }
     },
     {
       "componentName": "CaseStudyCardsFolder",
@@ -76,7 +98,8 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
       "isDatasourceFolder": true,
       "parentTemplateName": "CaseStudiesList",
       "fields": [],
-      "suggestions": "Organize case study cards within this folder."
+      "suggestions": "Organize case study cards within this folder.",
+      "designHints": null
     },
     {
       "componentName": "HeroBanner",
@@ -116,7 +139,18 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
           "source": ""
         }
       ],
-      "suggestions": "Consider adding a dark/light overlay toggle for the background image."
+      "suggestions": "Consider adding a dark/light overlay toggle for the background image.",
+      "designHints": {
+        "layout": "full-width centered",
+        "colors": "text: #ffffff, overlay: rgba(0,0,0,0.5), accent: #ffffff",
+        "typography": "headline: bold ~40px, subheadline: regular ~18px, CTA: semibold ~16px",
+        "spacing": "generous padding ~64px vertical, CTA margin-top ~24px",
+        "borders": "CTA button rounded-md ~6px, white border",
+        "shadows": "no card shadow, text has subtle text-shadow",
+        "backgroundStyle": "background image with dark overlay",
+        "iconography": "arrow icon on CTA button",
+        "responsiveHint": "full-width on all sizes, text centers on mobile"
+      }
     },
     {
       "componentName": "HeroBannersFolder",
@@ -127,7 +161,8 @@ export const DEV_COMPONENTS: AnalyzedComponent[] = [
       "isDatasourceFolder": true,
       "parentTemplateName": "HeroBanner",
       "fields": [],
-      "suggestions": "Organizes hero banner content items per page or section."
+      "suggestions": "Organizes hero banner content items per page or section.",
+      "designHints": null
     }
 ];
 

@@ -25,6 +25,7 @@ import type {
   ComponentField,
   AnalyzedComponent,
   TemplateGroup,
+  DesignHints,
 } from "@/lib/types/component";
 import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
 import { useRunLog } from "@/components/providers/run-log-provider";
@@ -97,6 +98,7 @@ function normalizeComponents(raw: Record<string, unknown>): AnalyzedComponent[] 
     parentTemplateName: c.parentTemplateName ? String(c.parentTemplateName) : null,
     fields: normalizeFields(c.fields),
     suggestions: normalizeSuggestions(c.suggestions),
+    designHints: normalizeDesignHints(c.designHints),
   }));
 
   // Auto-populate source for Treelist/Multilist fields on list parents
@@ -128,6 +130,20 @@ function normalizeSuggestions(raw: unknown): string {
   if (typeof raw === "string") return raw;
   if (Array.isArray(raw)) return (raw as unknown[]).map((s) => typeof s === "string" ? s : String((s as Record<string, unknown>).description ?? (s as Record<string, unknown>).name ?? s)).join(". ");
   return "";
+}
+
+const DESIGN_HINT_KEYS: (keyof DesignHints)[] = [
+  "layout", "colors", "typography", "spacing", "borders", "shadows", "backgroundStyle", "iconography", "responsiveHint",
+];
+
+function normalizeDesignHints(raw: unknown): DesignHints | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const hints = {} as Record<string, string>;
+  for (const key of DESIGN_HINT_KEYS) {
+    hints[key] = String(obj[key] ?? "");
+  }
+  return hints as unknown as DesignHints;
 }
 
 function emptyField(): ComponentField {
