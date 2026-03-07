@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+![Hackathon Logo](docs/images/hackathon.png?raw=true "Hackathon Logo")
+# Sitecore Hackathon 2026
 
-## Getting Started
+![Logo](logo.png)
+  
+## Team name
+⟹ The Paprika Prophets
 
-First, run the development server:
+## Category
+⟹ Best Marketplace App for Sitecore AI
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Description
+**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings, variants, styles, and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes, not hours. 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Video link
+⟹ Provide a video highlighing your Hackathon module submission and provide a link to the video. You can use any video hosting, file share or even upload the video to this repository. _Just remember to update the link below_
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+⟹ [Replace this Video link](#video-link)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pre-requisites and Dependencies
 
-## Learn More
+- **Sitecore AI** (formerly XM Cloud) — the app is built for Sitecore AI and requires an active environment.
+- **OpenAI API key** — required for AI-powered screenshot/HTML analysis and code generation.
 
-To learn more about Next.js, take a look at the following resources:
+> **Judges:** If you need a test API key, please reach out to **Mihály** and one will be provided.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Installation instructions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Obtain OpenAI API Key 
 
-## Deploy on Vercel
+OpenAI API Key is needed in the configuration section in order to communicate with OpenAI models.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Go to [platform.openai.com](https://platform.openai.com/) and sign in (or create an account).
+2. Navigate to **API Keys** in the left sidebar.
+3. Click **Create new secret key**, give it a name, and copy the key.
+4. You will enter this key in the app's Settings dialog when prompted.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Set up a Marketplace App in Sitecore AI
+
+1. In the Sitecore Portal, navigate to **Marketplace** and create a new **Custom App**.
+
+   ![Create Custom App](docs/images/marketplace-setup/1_marketplace_custom_app.png?raw=true "Create Custom App")
+
+2. Configure **API Access** for the app.
+
+   ![API Access](docs/images/marketplace-setup/2_marketplace_api_access.png?raw=true "API Access")
+
+3. Set the required **Permissions**.
+
+   ![Permissions](docs/images/marketplace-setup/3_marketplace_permission.png?raw=true "Permissions")
+
+4. Enter the **App URL** and upload an icon/image.
+
+   > **Tip:** You can use our hosted demo on Vercel directly — set the App URL to `https://2026-the-paprika-prophets.vercel.app/` and skip the local setup section below.
+
+   ![App URL & Image](docs/images/marketplace-setup/4_marketplace_url_img.png?raw=true "App URL & Image")
+
+5. Go to **My Apps** to verify the app is registered.
+
+   ![My Apps](docs/images/marketplace-setup/5_myapps.png?raw=true "My Apps")
+
+6. Click **Install** to add the app to your environment. You can choose multiple tenants
+
+   ![Install](docs/images/marketplace-setup/6_install.png?raw=true "Install")
+
+### Run the solution locally
+
+> **Note:** If you configured the Vercel URL (`https://2026-the-paprika-prophets.vercel.app/`) as the App URL in the Marketplace setup, you can skip this section entirely.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Sitecore-Hackathon/2026-The-Paprika-Prophets.git
+   cd 2026-The-Paprika-Prophets
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. The app runs on **http://localhost:3000** by default. Make sure this matches the App URL you configured in the Marketplace setup.
+
+### Configuration
+
+When a tenant is used for the first time, the app launches an **Installation Wizard** that guides you through configuration. On subsequent launches, the wizard is skipped and the app opens directly.
+
+1. On first start, the Installation Wizard is displayed automatically.
+
+   ![First Start](docs/images/marketplace-setup/7_first_start.png?raw=true "First Start")
+
+2. The wizard walks you through the installation process — follow the on-screen steps.
+
+   ![Installation Process](docs/images/marketplace-setup/8_installation_process.png?raw=true "Installation Process")
+
+3. Enter your **OpenAI API Key** and select the AI models you want to use for analysis and code generation.
+
+   ![Set OpenAI API Key](docs/images/marketplace-setup/9_set_openai_apikey.png?raw=true "Set OpenAI API Key")
+
+4. Confirm your settings. These can be changed later via the **Settings** dialog in the app.
+
+   ![Confirm Settings](docs/images/marketplace-setup/10_set_openai_apikey.png?raw=true "Confirm Settings")
+
+## Usage instructions
+⟹ Provide documentation about your module, how do the users use your module, where are things located, what do the icons mean, are there any secret shortcuts etc.
+
+Include screenshots where necessary. You can add images to the `./images` folder and then link to them from your documentation:
+
+![Hackathon Logo](docs/images/hackathon.png?raw=true "Hackathon Logo")
+
+You can embed images of different formats too:
+
+![Deal With It](docs/images/deal-with-it.gif?raw=true "Deal With It")
+
+And you can embed external images too:
+
+![Random](https://thiscatdoesnotexist.com/)
+
+## Comments
+If you'd like to make additional comments that is important for your module entry.
