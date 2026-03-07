@@ -2,9 +2,11 @@
 
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { Badge } from "@/components/ui/badge";
+import { useSiteContext } from "../providers/site-provider";
 
-export function TenantHeader() {
+export function TenantSiteHeader() {
   const { selectedTenant } = useTenantContext();
+  const { selectedSite } = useSiteContext();
 
   if (!selectedTenant) {
     return null;
@@ -17,6 +19,14 @@ export function TenantHeader() {
           Selected Tenant:
         </span>
         <Badge>{selectedTenant.tenantDisplayName}</Badge>
+        {selectedSite && (
+          <>
+            <span className="text-sm font-medium text-muted-foreground">
+              Selected Site:
+            </span>
+            <Badge>{selectedSite.displayName ?? selectedSite.name}</Badge>
+          </>
+        )}
       </div>
     </div>
   );
