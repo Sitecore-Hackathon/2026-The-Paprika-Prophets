@@ -17,75 +17,89 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-/* ── Hardcoded sample input ────────────────────────────────────── */
+/* ── Default sample input ──────────────────────────────────────── */
 
-const SAMPLE_INPUT = {
-  groups: [
-    {
-      id: "AnniversaryBanner",
-      label: "AnniversaryBanner",
-      type: "standalone",
-      members: [{ role: "standalone", idx: 0 }],
-      insertOptions: [],
-    },
-  ],
-  components: [
-    {
-      componentName: "AnniversaryBanner",
-      description:
-        "A promotional banner celebrating a milestone with text and optional image.",
-      visualLocation: "Center of the page.",
-      isListComponent: false,
-      childTemplateName: null,
-      isDatasourceFolder: false,
-      parentTemplateName: null,
-      fields: [
-        {
-          name: "Title",
-          displayName: "Title",
-          type: "Single-Line Text",
-          description: "Main headline for the banner.",
-          required: true,
-          source: "",
-        },
-        {
-          name: "Description",
-          displayName: "Description",
-          type: "Multi-Line Text",
-          description: "Supporting text for the banner.",
-          required: true,
-          source: "",
-        },
-        {
-          name: "BannerImage",
-          displayName: "Banner Image",
-          type: "Image",
-          description: "The image displayed on the banner.",
-          required: false,
-          source: "",
-        },
-      ],
-      variants: [
-        { name: "Default", description: "Standard appearance with image." },
-        { name: "TextOnly", description: "Appearance without image." },
-      ],
-      sxaStyles: [
-        {
-          name: "Alignment",
-          options: ["Left", "Center"],
-          description: "Text alignment options for the banner.",
-        },
-        {
-          name: "ImagePosition",
-          options: ["Left", "Right"],
-          description: "Option to mirror the image position.",
-        },
-      ],
-      suggestions:
-        "Ensure the image is high resolution and complements the text for clarity.",
-    },
-  ],
-};
+const DEFAULT_INPUT = JSON.stringify(
+  {
+    groups: [
+      {
+        id: "AnniversaryBanner",
+        label: "AnniversaryBanner",
+        type: "standalone",
+        members: [{ role: "standalone", idx: 0 }],
+        insertOptions: [],
+      },
+    ],
+    components: [
+      {
+        componentName: "AnniversaryBanner",
+        description:
+          "A promotional banner celebrating a milestone with text and optional image.",
+        visualLocation: "Center of the page.",
+        isListComponent: false,
+        childTemplateName: null,
+        isDatasourceFolder: false,
+        parentTemplateName: null,
+        fields: [
+          {
+            name: "Title",
+            displayName: "Title",
+            type: "Single-Line Text",
+            description: "Main headline for the banner.",
+            required: true,
+            source: "",
+          },
+          {
+            name: "Description",
+            displayName: "Description",
+            type: "Multi-Line Text",
+            description: "Supporting text for the banner.",
+            required: true,
+            source: "",
+          },
+          {
+            name: "BannerImage",
+            displayName: "Banner Image",
+            type: "Image",
+            description: "The image displayed on the banner.",
+            required: false,
+            source: "",
+          },
+        ],
+        variants: [
+          { name: "Default", description: "Standard appearance with image." },
+          { name: "TextOnly", description: "Appearance without image." },
+        ],
+        sxaStyles: [
+          {
+            name: "Alignment",
+            options: ["Left", "Center"],
+            description: "Text alignment options for the banner.",
+          },
+          {
+            name: "ImagePosition",
+            options: ["Left", "Right"],
+            description: "Option to mirror the image position.",
+          },
+        ],
+        suggestions:
+          "Ensure the image is high resolution and complements the text for clarity.",
+      },
+    ],
+  },
+  null,
+  2,
+);
+
+/* ── Helpers ────────────────────────────────────────────────────── */
+
+/** Convert PascalCase to kebab-case: "AnniversaryBanner" → "anniversary-banner" */
+function toKebab(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+}
 
 /* ── Code block parser ─────────────────────────────────────────── */
 
@@ -121,6 +135,9 @@ function parseCodeBlocks(raw: string): CodeBlock[] {
 export default function CodeGenPage() {
   const [apiKey, setApiKey] = useState("");
   const [codingModel, setCodingModel] = useState("gpt-4.1");
+  const [separatePropsFile, setSeparatePropsFile] = useState(false);
+  const [stylingSystem, setStylingSystem] = useState<"tailwind" | "bootstrap" | "css-modules" | "markup-only">("markup-only");
+  const [inputJson, setInputJson] = useState(DEFAULT_INPUT);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rawOutput, setRawOutput] = useState<string | null>(null);
@@ -128,9 +145,22 @@ export default function CodeGenPage() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
+  // Parse input JSON — returns null on invalid JSON
+  const parsedInput = useMemo(() => {
+    try {
+      return JSON.parse(inputJson);
+    } catch {
+      return null;
+    }
+  }, [inputJson]);
+
   const handleGenerate = useCallback(async () => {
     if (!apiKey.trim()) {
       setError("Please enter your OpenAI API key.");
+      return;
+    }
+    if (!parsedInput) {
+      setError("Invalid JSON input. Please fix the JSON and try again.");
       return;
     }
     setGenerating(true);
@@ -146,7 +176,10 @@ export default function CodeGenPage() {
           "x-openai-key": apiKey.trim(),
           "x-coding-model": codingModel,
         },
-        body: JSON.stringify(SAMPLE_INPUT),
+        body: JSON.stringify({
+          ...parsedInput,
+          options: { separatePropsFile, stylingSystem },
+        }),
       });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Generation failed");
@@ -158,7 +191,7 @@ export default function CodeGenPage() {
     } finally {
       setGenerating(false);
     }
-  }, [apiKey, codingModel]);
+  }, [apiKey, codingModel, separatePropsFile, stylingSystem, parsedInput]);
 
   const copyToClipboard = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
@@ -172,29 +205,28 @@ export default function CodeGenPage() {
     setTimeout(() => setCopiedCmd(null), 2000);
   };
 
-  /** Build terminal commands: scaffold + file write for each generated block */
+  /** Build terminal commands: file write + generate-map for each generated block */
   const terminalSteps = useMemo(() => {
     if (codeBlocks.length === 0) return [];
-    const componentNames = SAMPLE_INPUT.components.map((c) => c.componentName);
     const steps: { label: string; command: string; key: string }[] = [];
 
-    // Step 1: scaffold commands
-    for (const name of componentNames) {
-      steps.push({
-        label: `Scaffold ${name}`,
-        command: `sitecore-tools project component scaffold ${name}`,
-        key: `scaffold-${name}`,
-      });
-    }
-
-    // Step 2: file content write commands (PowerShell single-quoted here-string — fully literal, no escaping needed)
+    // Step 1: file content write commands (PowerShell single-quoted here-string — fully literal, no escaping needed)
     for (const block of codeBlocks) {
+      // Ensure parent directory exists before writing
+      const dir = block.filePath.replace(/\/[^/]+$/, "");
       steps.push({
         label: `Write ${block.filePath}`,
-        command: `@'\n${block.code}\n'@ | Set-Content -Path "${block.filePath}" -Encoding UTF8`,
+        command: `New-Item -ItemType Directory -Force -Path "${dir}"\n@'\n${block.code}\n'@ | Set-Content -Path "${block.filePath}" -Encoding UTF8`,
         key: `write-${block.filePath}`,
       });
     }
+
+    // Step 2: regenerate component map
+    steps.push({
+      label: "Generate component map",
+      command: "sitecore-tools project component generate-map",
+      key: "generate-map",
+    });
 
     // Bonus: combined "run all" script
     const allCmds = steps.map((s) => s.command).join("\n\n");
@@ -266,6 +298,55 @@ export default function CodeGenPage() {
         </CardContent>
       </Card>
 
+      {/* Code generation options */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Code Generation Options</CardTitle>
+          <CardDescription>
+            Configure how the component code should be generated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Props / Types Location</label>
+              <select
+                value={separatePropsFile ? "separate" : "inline"}
+                onChange={(e) => setSeparatePropsFile(e.target.value === "separate")}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="inline">Inline in component file</option>
+                <option value="separate">Separate .props.ts file</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {separatePropsFile
+                  ? "Fields interface & Props type in a separate file, imported by the component."
+                  : "Fields interface & Props type defined at the top of the component file."}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Styling System</label>
+              <select
+                value={stylingSystem}
+                onChange={(e) => setStylingSystem(e.target.value as typeof stylingSystem)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="markup-only">Markup only (BEM classes, no framework)</option>
+                <option value="tailwind">Tailwind CSS</option>
+                <option value="bootstrap">Bootstrap</option>
+                <option value="css-modules">CSS Modules</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stylingSystem === "markup-only" && "Semantic HTML with meaningful BEM-style class names."}
+                {stylingSystem === "tailwind" && "Tailwind utility classes applied directly in JSX."}
+                {stylingSystem === "bootstrap" && "Bootstrap grid and component classes."}
+                {stylingSystem === "css-modules" && "Scoped styles via .module.css files (generated as a separate block)."}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Input JSON */}
       <Card>
         <CardHeader>
@@ -273,72 +354,90 @@ export default function CodeGenPage() {
             <div>
               <CardTitle className="text-base">Input — Template Definitions</CardTitle>
               <CardDescription>
-                Hardcoded sample: {SAMPLE_INPUT.components.length} component
-                {SAMPLE_INPUT.components.length !== 1 ? "s" : ""},{" "}
-                {SAMPLE_INPUT.components.reduce(
-                  (s, c) => s + c.fields.length,
-                  0,
-                )}{" "}
-                fields
+                {parsedInput
+                  ? <>{parsedInput.components?.length ?? 0} component{(parsedInput.components?.length ?? 0) !== 1 ? "s" : ""}, {(parsedInput.components ?? []).reduce((s: number, c: { fields?: unknown[] }) => s + (c.fields?.length ?? 0), 0)} fields</>
+                  : <span className="text-destructive">Invalid JSON</span>
+                }
               </CardDescription>
             </div>
-            <Badge colorScheme="neutral">
-              {SAMPLE_INPUT.groups[0]?.type ?? "standalone"}
-            </Badge>
+            {parsedInput && (
+              <Badge colorScheme="neutral">
+                {parsedInput.groups?.[0]?.type ?? "standalone"}
+              </Badge>
+            )}
           </div>
         </CardHeader>
-        <CardContent>
-          <Collapsible>
-            <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
-              ▶ Show JSON
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs font-mono max-h-80 mt-2">
-                {JSON.stringify(SAMPLE_INPUT, null, 2)}
-              </pre>
-            </CollapsibleContent>
-          </Collapsible>
+        <CardContent className="space-y-4">
+          <textarea
+            className="w-full min-h-[300px] max-h-[500px] rounded-md border bg-muted p-3 text-xs font-mono resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+            value={inputJson}
+            onChange={(e) => setInputJson(e.target.value)}
+            spellCheck={false}
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                try {
+                  setInputJson(JSON.stringify(JSON.parse(inputJson), null, 2));
+                } catch { /* ignore */ }
+              }}
+            >
+              Format JSON
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setInputJson(DEFAULT_INPUT)}
+            >
+              Reset to Default
+            </Button>
+          </div>
 
           {/* Quick summary table */}
-          <div className="mt-4 border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold">Component</th>
-                  <th className="px-3 py-2 text-left font-semibold">Type</th>
-                  <th className="px-3 py-2 text-left font-semibold">Fields</th>
-                  <th className="px-3 py-2 text-left font-semibold">Variants</th>
-                  <th className="px-3 py-2 text-left font-semibold">SXA Styles</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {SAMPLE_INPUT.components.map((comp) => (
-                  <tr key={comp.componentName} className="hover:bg-muted/30">
-                    <td className="px-3 py-2 font-mono font-medium">
-                      {comp.componentName}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge
-                        colorScheme={
-                          comp.isListComponent ? "primary" : "neutral"
-                        }
-                        size="sm"
-                      >
-                        {comp.isListComponent ? "List" : "Standalone"}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2">{comp.fields.length}</td>
-                    <td className="px-3 py-2">
-                      {comp.variants.map((v) => v.name).join(", ")}
-                    </td>
-                    <td className="px-3 py-2">
-                      {comp.sxaStyles.map((s) => s.name).join(", ")}
-                    </td>
+          {parsedInput?.components && parsedInput.components.length > 0 && (
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold">Component</th>
+                    <th className="px-3 py-2 text-left font-semibold">Type</th>
+                    <th className="px-3 py-2 text-left font-semibold">Fields</th>
+                    <th className="px-3 py-2 text-left font-semibold">Variants</th>
+                    <th className="px-3 py-2 text-left font-semibold">SXA Styles</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {parsedInput.components.map((comp: any) => (
+                    <tr key={comp.componentName} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono font-medium">
+                        {comp.componentName}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge
+                          colorScheme={
+                            comp.isListComponent ? "primary" : "neutral"
+                          }
+                          size="sm"
+                        >
+                          {comp.isListComponent ? "List" : "Standalone"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2">{comp.fields?.length ?? 0}</td>
+                      <td className="px-3 py-2">
+                        {(comp.variants ?? []).map((v: { name: string }) => v.name).join(", ")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {(comp.sxaStyles ?? []).map((s: { name: string }) => s.name).join(", ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
