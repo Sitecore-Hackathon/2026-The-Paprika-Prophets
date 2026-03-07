@@ -5,7 +5,6 @@ import {
   ClientSDK,
 } from "@sitecore-marketplace-sdk/client";
 import { XMC } from "@sitecore-marketplace-sdk/xmc";
-import type React from "react";
 import {
   type ReactNode,
   createContext,
@@ -21,9 +20,7 @@ interface ClientSDKProviderProps {
 const ClientSDKContext = createContext<ClientSDK | null>(null);
 const AppContextContext = createContext<ApplicationContext | null>(null);
 
-export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
-  children,
-}) => {
+export function MarketplaceProvider({ children }: ClientSDKProviderProps) {
   const [client, setClient] = useState<ClientSDK | null>(null);
   const [appContext, setAppContext] = useState<ApplicationContext | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,19 +69,13 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
         <div>{error}</div>
         <div>
           Please check if the client SDK is loaded inside Sitecore Marketplace
-          parent window and you have properly set your app's extention points.
+          parent window and you have properly set your app&apos;s extension points.
         </div>
       </div>
     );
   }
 
-  if (!client) {
-    return null;
-  }
-
-  if (!appContext) {
-    return null;
-  }
+  if (!client || !appContext) return null;
 
   return (
     <ClientSDKContext.Provider value={client}>
@@ -93,7 +84,9 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
       </AppContextContext.Provider>
     </ClientSDKContext.Provider>
   );
-};
+}
+
+
 
 export const useMarketplaceClient = () => {
   const context = useContext(ClientSDKContext);

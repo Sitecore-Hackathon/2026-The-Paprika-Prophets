@@ -1,11 +1,13 @@
 export interface GraphQLResponse<T = unknown> {
   data?: {
     data?: T;
+    errors?: Array<{
+      message: string;
+      locations?: Array<{ line: number; column: number }>;
+      path?: (string | number)[];
+      extensions?: Record<string, unknown>;
+    }>;
   };
-  errors?: Array<{
-    message: string;
-    path?: string[];
-  }>;
 }
 
 export interface SitecoreItem {

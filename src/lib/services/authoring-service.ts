@@ -1,5 +1,5 @@
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
-import { buildGetItemQuery, buildGetItemWithFieldsQuery } from "@/lib/graphql/queries/items";
+import { buildGetItemQuery, buildGetItemWithFieldsQuery, buildGetItemByIdQuery, buildGetChildrenByIdQuery } from "@/lib/graphql/queries/items";
 import { buildGetTemplateQuery } from "@/lib/graphql/queries/templates";
 import {
   buildCreateItemMutation,
@@ -35,7 +35,12 @@ export class AuthoringService {
         body: { query },
       },
     });
-    return result as GraphQLResponse<T>;
+    const response = result as GraphQLResponse<T>;
+    const gqlErrors = response?.data?.errors;
+    if (gqlErrors?.length) {
+      throw new Error(gqlErrors.map((e) => e.message).join("; "));
+    }
+    return response;
   }
 
   async getItem(path: string, database: string = "master"): Promise<SitecoreItem | null> {
@@ -81,10 +86,12 @@ export class AuthoringService {
     return response?.data?.data?.item ?? null;
   }
 
-  async createTemplate(config: TemplateConfig): Promise<string | null> {
+  async createTemplate(config: TemplateConfig): Promise<string> {
     const mutation = buildCreateTemplateMutation(config);
     const response = await this.executeQuery<CreateTemplateResponse>(mutation);
-    return response?.data?.data?.createItemTemplate?.itemTemplate?.templateId ?? null;
+    const templateId = response?.data?.data?.createItemTemplate?.itemTemplate?.templateId;
+    if (!templateId) throw new Error(`Mutation succeeded but returned no template ID for "${config.name}"`);
+    return templateId;
   }
 
   async deleteTemplate(templateId: string): Promise<boolean> {
@@ -96,5 +103,30 @@ export class AuthoringService {
   async itemExists(path: string): Promise<boolean> {
     const item = await this.getItem(path);
     return item !== null;
+  }
+
+  async getItemById(itemId: string, database: string = "master"): Promise<SitecoreItem | null> {
+    const query = buildGetItemByIdQuery(itemId, database);
+    const response = await this.executeQuery<{ item: SitecoreItem }>(query);
+    return response?.data?.data?.item ?? null;
+  }
+
+  async getChildrenById(itemId: string, database: string = "master"): Promise<SitecoreItem[]> {
+    const query = buildGetChildrenByIdQuery(itemId, database);
+    const response = await this.executeQuery<{ item: SitecoreItem }>(query);
+    return response?.data?.data?.item?.children?.nodes ?? [];
+  }
+
+  async getUniqueName(parentId: string, desiredName: string, database: string = "master"): Promise<string> {
+    const children = await this.getChildrenById(parentId, database);
+    const existingNames = children.map((c) => c.name);
+
+    let candidate = desiredName;
+    let index = 1;
+    while (existingNames.includes(candidate)) {
+      candidate = `${desiredName} ${index++}`;
+    }
+
+    return candidate;
   }
 }
