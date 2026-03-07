@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { WizardProvider } from "@/components/wizard/wizard-context";
 import { WizardShell } from "@/components/wizard/wizard-shell";
 import { TenantSelector } from "@/components/wizard/steps/tenant-selector";
@@ -16,6 +17,16 @@ export default function Home() {
         <ComponentInput />
         <AnalysisResults />
       </WizardShell>
+
+      {/* Quick link to Code Generation POC */}
+      <div className="fixed bottom-4 right-4">
+        <Link
+          href="/codegen"
+          className="inline-flex items-center gap-2 rounded-lg bg-muted px-4 py-2 text-sm font-medium hover:bg-muted/80 border shadow-sm transition-colors"
+        >
+          ⚡ Code Generation POC
+        </Link>
+      </div>
     </WizardProvider>
   );
 }
