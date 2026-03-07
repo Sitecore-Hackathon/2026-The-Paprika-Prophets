@@ -10,7 +10,7 @@
 ⟹ Best Marketplace App for Sitecore AI
 
 ## Description
-**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings, variants, styles, and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes, not hours. 
+**Component Forge** is a Sitecore Marketplace app that dramatically accelerates component development in SitecoreAI. While AI-powered code generation tools are widely available today, scaffolding the Sitecore side — templates, renderings, variants, styles, and demo content — remains a tedious, manual process. Component Forge bridges that gap: it analyzes screenshots or HTML of your design, generates complete Sitecore item definitions, and produces Content SDK–compatible Next.js component code ready to paste into your codebase. From design to working component in minutes — not hours — with a human in the loop.
 
 ## Video link
 ⟹ Provide a video highlighing your Hackathon module submission and provide a link to the video. You can use any video hosting, file share or even upload the video to this repository. _Just remember to update the link below_
@@ -41,7 +41,7 @@ OpenAI API Key is needed in the configuration section in order to communicate wi
 
    ![Create Custom App](docs/images/marketplace-setup/1_marketplace_custom_app.png?raw=true "Create Custom App")
 
-2. Configure **API Access** for the app.
+2. Configure the following **API Access** for the app.
 
    ![API Access](docs/images/marketplace-setup/2_marketplace_api_access.png?raw=true "API Access")
 
@@ -103,19 +103,12 @@ When a tenant is used for the first time, the app launches an **Installation Wiz
    ![Confirm Settings](docs/images/marketplace-setup/10_set_openai_apikey.png?raw=true "Confirm Settings")
 
 ## Usage instructions
-⟹ Provide documentation about your module, how do the users use your module, where are things located, what do the icons mean, are there any secret shortcuts etc.
-
-Include screenshots where necessary. You can add images to the `./images` folder and then link to them from your documentation:
-
-![Hackathon Logo](docs/images/hackathon.png?raw=true "Hackathon Logo")
-
-You can embed images of different formats too:
-
-![Deal With It](docs/images/deal-with-it.gif?raw=true "Deal With It")
-
-And you can embed external images too:
-
-![Random](https://thiscatdoesnotexist.com/)
+ (TODO FILL IT LATER WHEN FULL FLOW IS IN PACE)
 
 ## Comments
-If you'd like to make additional comments that is important for your module entry.
+
+### Further Improvements
+
+- **Server-side Sitecore access:** Currently the OpenAI API Key is fetched via the Client SDK and forwarded to custom API routes as a request header. This mirrors the Custom Authorization pattern recommended by the Marketplace SDK (where access tokens are passed from client to server via headers). A future improvement would be to enable the Experimental Sitecore Server Client in the API routes, allowing direct Sitecore CM calls server-side and removing the need to pass the OpenAI key through the browser — even though it's already protected by built-in authorization.
+- **Enhanced logging:** Logging is currently stored as Sitecore items under a simplified Run/RunStep structure. We explored using external storage (e.g. Supabase, Vercel KV) for richer audit trails and better query capabilities, but opted against it to keep the setup simple and avoid adding extra dependencies for judges.
+- **Figma integration:** Importing designs directly from Figma was on our roadmap, but we prioritized the screenshot and HTML analysis flows first. Figma's free-tier API rate limits made exploration impractical within the hackathon timeframe.
