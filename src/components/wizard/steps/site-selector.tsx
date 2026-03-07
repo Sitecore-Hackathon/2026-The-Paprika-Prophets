@@ -75,16 +75,18 @@ export function SiteSelector() {
             const settings = await fetchSiteSettings(client, sitecoreContextId, `${details.rootPath}/Settings`);
             if (settings) {
               const authoring = new AuthoringService(client, sitecoreContextId);
-              const [tpl, rndr, rt] = await Promise.allSettled([
+              const [tpl, rndr, rt, ds] = await Promise.allSettled([
                 settings.Templates ? authoring.getItemById(settings.Templates) : Promise.resolve(null),
                 settings.RenderingsPath ? authoring.getItemById(settings.RenderingsPath) : Promise.resolve(null),
                 settings.RouteBaseTemplate ? authoring.getItemById(settings.RouteBaseTemplate) : Promise.resolve(null),
+                settings.AppDatasourcesPath ? authoring.getItemById(settings.AppDatasourcesPath) : Promise.resolve(null),
               ]);
               setSiteSettings({
                 ...settings,
                 templatesItem: tpl.status === "fulfilled" ? tpl.value : null,
                 renderingsItem: rndr.status === "fulfilled" ? rndr.value : null,
                 routeBaseTemplateItem: rt.status === "fulfilled" ? rt.value : null,
+                appDatasourcesItem: ds.status === "fulfilled" ? ds.value : null,
               });
             } else {
               setSiteSettings(null);
@@ -162,6 +164,7 @@ export async function fetchSiteSettings(
       RouteBaseTemplate: field("RouteBaseTemplate"),
       RenderingsPath: field("RenderingsPath"),
       Templates: field("Templates"),
+      AppDatasourcesPath: field("AppDatasourcesPath"),
     };
   } catch (err) {
     console.error("[site-selector] fetchSiteSettings failed:", err);
