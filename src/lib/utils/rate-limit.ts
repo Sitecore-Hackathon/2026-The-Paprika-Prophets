@@ -6,9 +6,9 @@
  * the app is scaled horizontally.
  */
 
-interface RateLimitEntry {
+type RateLimitEntry = {
   timestamps: number[];
-}
+};
 
 const store = new Map<string, RateLimitEntry>();
 
@@ -29,11 +29,11 @@ setInterval(() => {
  * @param windowMs Window duration in milliseconds (default: 60 s).
  * @returns `{ allowed, remaining, retryAfterMs }`.
  */
-export function rateLimit(
+export const rateLimit = (
   key: string,
   limit: number = 10,
   windowMs: number = 60_000,
-): { allowed: boolean; remaining: number; retryAfterMs: number } {
+): { allowed: boolean; remaining: number; retryAfterMs: number } => {
   const now = Date.now();
   let entry = store.get(key);
 

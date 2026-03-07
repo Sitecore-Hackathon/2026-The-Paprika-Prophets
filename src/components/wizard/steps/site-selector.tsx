@@ -18,10 +18,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { fetchSiteDetails, fetchSites } from "@/lib/services/agent-service";
 import type { experimental_Agent } from "@sitecore-marketplace-sdk/xmc";
 import { ClientSDK } from "@sitecore-marketplace-sdk/client";
-import { SiteSettings } from "@/lib/types/agent";
+import type { SiteSettings } from "@/lib/types/agent";
 import { AuthoringService } from "@/lib/services/authoring-service";
 
-export function SiteSelector() {
+export const SiteSelector = () => {
   const client = useMarketplaceClient();
   const { selectedTenant } = useTenantContext();
   const {
@@ -147,11 +147,11 @@ export function SiteSelector() {
   );
 }
 
-export async function fetchSiteSettings(
+export const fetchSiteSettings = async (
   client: ClientSDK,
   sitecoreContextId: string,
   path: string,
-): Promise<SiteSettings | null> {
+): Promise<SiteSettings | null> => {
   try {
     const authoring = new AuthoringService(client, sitecoreContextId);
     const item = await authoring.getItemWithFields(path);

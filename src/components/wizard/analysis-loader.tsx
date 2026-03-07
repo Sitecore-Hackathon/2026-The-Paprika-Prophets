@@ -20,7 +20,7 @@ const MESSAGES = [
   "Almost there... probably...",
 ];
 
-export function AnalysisLoader({ label = "Analyzing" }: { label?: string }) {
+export const AnalysisLoader = ({ label = "Analyzing" }: { label?: string }) => {
   const [msgIndex, setMsgIndex] = useState(0);
   const [fade, setFade] = useState(true);
 

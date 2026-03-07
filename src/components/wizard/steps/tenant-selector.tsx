@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { SiteSelector } from "./site-selector";
 
-export function TenantSelector() {
+export const TenantSelector = () => {
   const appContext = useAppContext();
   const { selectedTenant, setSelectedTenant } = useTenantContext();
 

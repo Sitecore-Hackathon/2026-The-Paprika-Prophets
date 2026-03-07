@@ -4,7 +4,7 @@ import { useTenantContext } from "@/components/providers/tenant-provider";
 import { Badge } from "@/components/ui/badge";
 import { useSiteContext } from "../providers/site-provider";
 
-export function TenantSiteHeader() {
+export const TenantSiteHeader = () => {
   const { selectedTenant } = useTenantContext();
   const { selectedSite } = useSiteContext();
 

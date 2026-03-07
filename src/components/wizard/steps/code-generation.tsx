@@ -19,24 +19,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
-/* ── Helpers ────────────────────────────────────────────────────── */
-
-/** Convert PascalCase to kebab-case: "AnniversaryBanner" → "anniversary-banner" */
-function toKebab(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
-    .toLowerCase();
-}
+import { toKebab } from "@/lib/utils/string";
+import { DEFAULT_CODING_MODEL, HEADERS } from "@/lib/constants";
 
 /* ── Code block parser ─────────────────────────────────────────── */
 
-interface CodeBlock {
+type CodeBlock = {
   filePath: string;
   language: string;
   code: string;
-}
+};
 
 function parseCodeBlocks(raw: string): CodeBlock[] {
   const blocks: CodeBlock[] = [];
@@ -60,13 +52,13 @@ function parseCodeBlocks(raw: string): CodeBlock[] {
 
 /* ── Main Export ──────────────────────────────────────────────── */
 
-export function CodeGeneration() {
+export const CodeGeneration = () => {
   const { goBack, data } = useWizard();
   const { recordStep, finalize, getRunLog } = useRunLog();
 
   /* Read from wizard context */
   const openAiApiKey = (data.openAiApiKey as string) ?? "";
-  const codingModel = (data.codingLlmModel as string) || "gpt-5.3-codex";
+  const codingModel = (data.codingLlmModel as string) || DEFAULT_CODING_MODEL;
   const editedComponents = data.editedComponents as Record<string, unknown>[] | undefined;
   const templateGroups = data.templateGroups as Record<string, unknown>[] | undefined;
   const installService = data.installationService as InstallationService | undefined;
@@ -113,8 +105,8 @@ export function CodeGeneration() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-openai-key": openAiApiKey,
-          "x-coding-model": codingModel,
+          [HEADERS.OPENAI_KEY]: openAiApiKey,
+          [HEADERS.CODING_MODEL]: codingModel,
         },
         body: JSON.stringify({
           components: codegenComponents,

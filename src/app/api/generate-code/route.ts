@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-import { rateLimit } from "@/lib/utils/rate-limit";
 import { sanitizeForPrompt } from "@/lib/utils/validation";
+import { DEFAULT_CODING_MODEL, HEADERS } from "@/lib/constants";
+import { guardRoute, buildMetadata, errorResponse } from "@/lib/utils/api-helpers";
 
 /* ── System prompt for code generation ─────────────────────────── */
 
@@ -163,45 +163,19 @@ Always prioritize translating the designHints faithfully. If a hint says "rounde
 
 /* ── Options interface ─────────────────────────────────────────── */
 
-interface CodeGenOptions {
+type CodeGenOptions = {
   separatePropsFile?: boolean;
   stylingSystem?: "tailwind" | "bootstrap" | "css-modules" | "markup-only";
-}
+};
 
 /* ── Route handler ─────────────────────────────────────────────── */
 
 export async function POST(request: NextRequest) {
-  /* Rate limiting */
-  const callerKey =
-    request.headers.get("x-forwarded-for") ??
-    request.headers.get("x-real-ip") ??
-    "anonymous";
-  const rl = rateLimit(`codegen:${callerKey}`, 10, 60_000);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) },
-      },
-    );
-  }
+  const guard = guardRoute(request, "codegen");
+  if (!guard.ok) return guard.response;
 
-  /* API key */
-  const apiKey =
-    request.headers.get("x-openai-key") || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "No OpenAI API key provided." },
-      { status: 401 },
-    );
-  }
-
-  /* Coding model — falls back to a sensible default */
-  const model = request.headers.get("x-coding-model") || "gpt-5.3-codex";
+  const model = request.headers.get(HEADERS.CODING_MODEL) || DEFAULT_CODING_MODEL;
   const isCodexModel = model.toLowerCase().includes("codex");
-
-  const openai = new OpenAI({ apiKey });
 
   try {
     const body = await request.json();
@@ -214,17 +188,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* Build a user prompt describing the templates */
     const userPrompt = buildUserPrompt(components, groups, options as CodeGenOptions);
 
     let code: string;
-    let promptTokens = 0;
-    let completionTokens = 0;
+    let usage: { prompt_tokens?: number; completion_tokens?: number; input_tokens?: number; output_tokens?: number } | null = null;
     const t0 = Date.now();
 
     if (isCodexModel) {
-      /* Codex models use the Responses API */
-      const response = await openai.responses.create({
+      const response = await guard.openai.responses.create({
         model,
         instructions: SYSTEM_PROMPT,
         input: sanitizeForPrompt(userPrompt),
@@ -232,11 +203,9 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.output_text ?? "";
-      promptTokens = response.usage?.input_tokens ?? 0;
-      completionTokens = response.usage?.output_tokens ?? 0;
+      usage = response.usage ? { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens } : null;
     } else {
-      /* Chat models use the Chat Completions API */
-      const response = await openai.chat.completions.create({
+      const response = await guard.openai.chat.completions.create({
         model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -246,8 +215,7 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
       });
       code = response.choices[0].message.content ?? "";
-      promptTokens = response.usage?.prompt_tokens ?? 0;
-      completionTokens = response.usage?.completion_tokens ?? 0;
+      usage = response.usage ? { prompt_tokens: response.usage.prompt_tokens, completion_tokens: response.usage.completion_tokens } : null;
     }
     const durationMs = Date.now() - t0;
 
@@ -255,21 +223,10 @@ export async function POST(request: NextRequest) {
       success: true,
       code,
       model,
-      metadata: {
-        stepName: "generate-code",
-        model,
-        promptTokens,
-        completionTokens,
-        totalTokens: promptTokens + completionTokens,
-        durationMs,
-        timestamp: new Date().toISOString(),
-      },
+      metadata: buildMetadata("generate-code", model, usage, durationMs),
     });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Code generation failed";
-    console.error("Code generation error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(error, "Code generation error");
   }
 }
 

@@ -11,13 +11,10 @@ import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { TemplateConfig } from "@/lib/types/graphql";
 import type { AuthoringService } from "@/lib/services/authoring-service";
-import { DEFAULT_LANGUAGE } from "@/lib/constants";
+import { DEFAULT_LANGUAGE, WELL_KNOWN_TEMPLATES } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
-
-/** Common/Folder base template for datasource folder items. */
-const COMMON_FOLDER_TEMPLATE_ID = "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}";
 
 /** Creation order within a group — folders must be last so they can reference earlier template IDs. */
 const ROLE_ORDER: Record<string, number> = {
@@ -52,7 +49,7 @@ function buildFolderConfig(name: string, parentId: string, parentPath: string): 
     parentId,
     parentPath,
     sections: [],
-    baseTemplateIds: [COMMON_FOLDER_TEMPLATE_ID],
+    baseTemplateIds: [WELL_KNOWN_TEMPLATES.COMMON_FOLDER],
     createStandardValuesItem: true,
   };
 }

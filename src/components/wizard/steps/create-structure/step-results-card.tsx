@@ -8,7 +8,7 @@ type Props = {
   results: ItemResult[];
 };
 
-export function StepResultsCard({ results }: Props) {
+export const StepResultsCard = ({ results }: Props) => {
   if (results.length === 0) return null;
 
   return (

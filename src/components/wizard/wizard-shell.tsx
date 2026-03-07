@@ -6,7 +6,7 @@ import { useTenantContext } from "@/components/providers/tenant-provider";
 import { cn } from "@/lib/utils/tailwind";
 import { useEffect } from "react";
 
-export function WizardShell({ children }: { children: React.ReactNode[] }) {
+export const WizardShell = ({ children }: { children: React.ReactNode[] }) => {
   const { steps, currentStepIndex, goTo } = useWizard();
   const { selectedTenant } = useTenantContext();
 

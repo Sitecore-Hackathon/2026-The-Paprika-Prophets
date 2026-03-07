@@ -21,7 +21,7 @@ export const MAX_HTML_LENGTH = 500 * 1024;
  *
  * @returns `null` if valid, or an error message string.
  */
-export function validateImageFile(file: File | null): string | null {
+export const validateImageFile = (file: File | null): string | null => {
   if (!file || !(file instanceof File)) {
     return "No image file provided.";
   }
@@ -42,7 +42,7 @@ export function validateImageFile(file: File | null): string | null {
  *
  * @returns `null` if valid, or an error message string.
  */
-export function validateHtmlInput(html: unknown): string | null {
+export const validateHtmlInput = (html: unknown): string | null => {
   if (typeof html !== "string" || html.trim().length === 0) {
     return "HTML content is required and must be a non-empty string.";
   }
@@ -58,11 +58,8 @@ export function validateHtmlInput(html: unknown): string | null {
  * Strip common prompt-injection patterns from user-supplied text before
  * it is embedded in an LLM prompt. This is a defence-in-depth measure —
  * the system prompt boundary is the primary defence.
- *
- * Removes lines that look like jailbreak instructions, markdown role
- * overrides, and other well-known injection payloads.
  */
-export function sanitizeForPrompt(input: string): string {
+export const sanitizeForPrompt = (input: string): string => {
   // Remove lines that attempt to override system instructions
   const dangerousPatterns = [
     /^(ignore|disregard|forget)\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions?|prompts?|rules?|context)/im,

@@ -113,7 +113,7 @@ function Inner() {
   );
 }
 
-export function CreateSitecoreStructure() {
+export const CreateSitecoreStructure = () => {
   return (
     <StructureProvider>
       <Inner />

@@ -16,36 +16,36 @@ export type InstallationState =
   | "installed"
   | "error";
 
-export interface InstallationStatus {
+export type InstallationStatus = {
   state: InstallationState;
   templates: TemplateCheckResult[];
   moduleFolderExists: boolean;
   message?: string;
   error?: string;
-}
+};
 
-export interface TemplateCheckResult {
+export type TemplateCheckResult = {
   name: string;
   path: string;
   exists: boolean;
   templateId?: string;
-}
+};
 
-export interface InstallationStep {
+export type InstallationStep = {
   id: string;
   type: "template" | "item" | "folder";
   name: string;
   status: "pending" | "in-progress" | "completed" | "failed";
   error?: string;
   result?: string;
-}
+};
 
-export interface InstallationProgress {
+export type InstallationProgress = {
   steps: InstallationStep[];
   currentStep: number;
   totalSteps: number;
   isComplete: boolean;
-}
+};
 
 export class InstallationService {
   private authoringService: AuthoringService;

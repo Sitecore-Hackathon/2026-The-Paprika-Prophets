@@ -26,18 +26,8 @@ import type {
 import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
 import { useRunLog } from "@/components/providers/run-log-provider";
 import type { AiCallMetadata } from "@/lib/services/logging-service";
-
-/* ── Utilities ─────────────────────────────────────────────────────── */
-
-/** Convert a data-URL to a Blob without fetch (avoids CSP connect-src). */
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, b64] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
+import { dataUrlToBlob } from "@/lib/utils/string";
+import { HEADERS } from "@/lib/constants";
 
 /* ── Constants ────────────────────────────────────────────────────── */
 
@@ -272,7 +262,7 @@ const ROLE_DOT_COLORS: Record<TemplateMemberRole, string> = {
 
 /* ── Main Export ──────────────────────────────────────────────────── */
 
-export function AnalysisResults() {
+export const AnalysisResults = () => {
   const { goBack, goNext, data, setStepData } = useWizard();
   const { selectedTenant } = useTenantContext();
   const { recordStep } = useRunLog();
@@ -389,9 +379,9 @@ export function AnalysisResults() {
           method: "POST",
           body: formData,
           headers: {
-            "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
-            ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
-            ...((data.analysisLlmModel as string) ? { "x-analysis-model": data.analysisLlmModel as string } : {}),
+            [HEADERS.TENANT_ID]: selectedTenant?.tenantId ?? "unknown",
+            ...(openAiApiKey ? { [HEADERS.OPENAI_KEY]: openAiApiKey } : {}),
+            ...((data.analysisLlmModel as string) ? { [HEADERS.ANALYSIS_MODEL]: data.analysisLlmModel as string } : {}),
           },
         });
         json = await response.json();
@@ -402,9 +392,9 @@ export function AnalysisResults() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
-            ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
-            ...((data.analysisLlmModel as string) ? { "x-analysis-model": data.analysisLlmModel as string } : {}),
+            [HEADERS.TENANT_ID]: selectedTenant?.tenantId ?? "unknown",
+            ...(openAiApiKey ? { [HEADERS.OPENAI_KEY]: openAiApiKey } : {}),
+            ...((data.analysisLlmModel as string) ? { [HEADERS.ANALYSIS_MODEL]: data.analysisLlmModel as string } : {}),
           },
           body: JSON.stringify({ html: htmlContent, feedback, previousResult: analysisRaw }),
         });

@@ -127,7 +127,7 @@ type SiteTreeProps = {
   onSelect: (item: SelectedTreeItem) => void;
 };
 
-export function SiteTree({ rootPath = "/sitecore", selectedPath = null, onSelect }: SiteTreeProps) {
+export const SiteTree = ({ rootPath = "/sitecore", selectedPath = null, onSelect }: SiteTreeProps) => {
   const client = useMarketplaceClient();
   const { selectedTenant } = useTenantContext();
 

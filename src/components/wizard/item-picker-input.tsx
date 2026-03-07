@@ -14,14 +14,7 @@ import {
 import { SiteTree, type SelectedTreeItem } from "@/components/wizard/site-tree";
 import { Icon } from "@/components/ui/icon";
 import { mdiDotsHorizontal } from "@mdi/js";
-
-const GUID_BARE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GUID_BRACED = /^\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}$/i;
-
-function isValidGuid(value: string): boolean {
-  const v = value.trim();
-  return GUID_BARE.test(v) || GUID_BRACED.test(v);
-}
+import { isValidGuid } from "@/lib/utils/string";
 
 type ItemPickerInputProps = {
   id: string;
@@ -37,7 +30,7 @@ type ItemPickerInputProps = {
   onBlur?: () => void;
 };
 
-export function ItemPickerInput({
+export const ItemPickerInput = ({
   id,
   label,
   hint,
@@ -49,7 +42,7 @@ export function ItemPickerInput({
   onChange,
   onSelect,
   onBlur,
-}: ItemPickerInputProps) {
+}: ItemPickerInputProps) => {
   const [open, setOpen] = useState(false);
 
   return (

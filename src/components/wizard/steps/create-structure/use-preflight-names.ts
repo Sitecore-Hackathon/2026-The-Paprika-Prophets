@@ -7,12 +7,12 @@ import type { AuthoringService } from "@/lib/services/authoring-service";
  * Resolves unique Sitecore item names for a list of desired names under a given parent.
  * Re-runs whenever parentId, names, authoringService, or refreshKey changes.
  */
-export function usePreflightNames(
+export const usePreflightNames = (
   parentId: string,
   names: string[],
   authoringService: AuthoringService,
   refreshKey = 0,
-): { preflightNames: Record<string, string> | null; preflightLoading: boolean } {
+): { preflightNames: Record<string, string> | null; preflightLoading: boolean } => {
   const [preflightNames, setPreflightNames] = useState<Record<string, string> | null>(null);
   const [preflightLoading, setPreflightLoading] = useState(false);
 

@@ -21,7 +21,7 @@ import type { AuthoringService } from "@/lib/services/authoring-service";
 import { generateDummyFieldValue } from "@/lib/utils/dummy-fields";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemResult } from "./structure-context";
-import { DEFAULT_LANGUAGE } from "@/lib/constants";
+import { DEFAULT_LANGUAGE, DEFAULT_PLACEHOLDER } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
@@ -296,7 +296,7 @@ export const ExamplePageStep = () => {
   const [dsParentId, setDsParentId] = useState(siteSettings?.AppDatasourcesPath ?? "");
   const [dsTreeItem, setDsTreeItem] = useState<SelectedTreeItem | null>(defaultDsParent);
   const [pageName, setPageName] = useState(`${components[0]?.componentName || "Example"}`);
-  const [placeholder, setPlaceholder] = useState("headless-main");
+  const [placeholder, setPlaceholder] = useState(DEFAULT_PLACEHOLDER);
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [availableLanguages, setAvailableLanguages] = useState<{ name: string; displayName: string }[]>([]);
   const [languagesLoading, setLanguagesLoading] = useState(false);
@@ -530,7 +530,7 @@ export const ExamplePageStep = () => {
               value={placeholder}
               onChange={(e) => { setPlaceholder(e.target.value); touch("placeholder"); }}
               onBlur={() => touch("placeholder")}
-              placeholder="headless-main"
+              placeholder={DEFAULT_PLACEHOLDER}
               aria-invalid={!!fieldError("placeholder", placeholder)}
               className={fieldError("placeholder", placeholder) ? "border-destructive focus-visible:ring-destructive" : ""}
             />
