@@ -25,6 +25,20 @@ export const buildGetItemByIdQuery = (itemId: string, database: string = "master
   }
 `;
 
+export const buildGetChildrenByIdQuery = (itemId: string, database: string = "master") => `
+  query {
+    item(where: { database: "${database}", itemId: "${itemId}" }) {
+      children {
+        nodes {
+          itemId
+          name
+          path
+        }
+      }
+    }
+  }
+`;
+
 export const buildGetItemWithFieldsQuery = (
   path: string,
   database: string = "master",

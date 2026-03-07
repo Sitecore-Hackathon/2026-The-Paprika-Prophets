@@ -39,12 +39,21 @@ const STEPS: WizardStep[] = [
   { id: "installation-wizard", label: "Installation" },
   { id: "component-input", label: "Component Input" },
   { id: "analysis-results", label: "Results" },
+  { id: "create-structure", label: "Create Structure" },
 ];
 
-export function WizardProvider({ children }: { children: ReactNode }) {
+export function WizardProvider({
+  children,
+  initialStep = 0,
+  initialData = {},
+}: {
+  children: ReactNode;
+  initialStep?: number;
+  initialData?: Record<string, unknown>;
+}) {
   const [state, setState] = useState<WizardState>({
-    currentStepIndex: 0,
-    data: {},
+    currentStepIndex: initialStep,
+    data: initialData,
   });
 
   const goNext = useCallback(() => {

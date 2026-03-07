@@ -64,6 +64,7 @@ export function SiteSelector() {
       const site = sites.find((s) => s.id === siteId) ?? null;
       setSelectedSite(site);
       setSiteDetails(null);
+      setSiteSettings(null);
       if (!site) return;
 
       setDetailsLoading(true);
@@ -72,14 +73,31 @@ export function SiteSelector() {
           setSiteDetails(details);
           if (details?.rootPath) {
             const settings = await fetchSiteSettings(client, sitecoreContextId, `${details.rootPath}/Settings`);
-            setSiteSettings(settings);
-            console.log("Fetched site settings:", settings);
+            if (settings) {
+              const authoring = new AuthoringService(client, sitecoreContextId);
+              const [tpl, rndr, rt] = await Promise.allSettled([
+                settings.Templates ? authoring.getItemById(settings.Templates) : Promise.resolve(null),
+                settings.RenderingsPath ? authoring.getItemById(settings.RenderingsPath) : Promise.resolve(null),
+                settings.RouteBaseTemplate ? authoring.getItemById(settings.RouteBaseTemplate) : Promise.resolve(null),
+              ]);
+              setSiteSettings({
+                ...settings,
+                templatesItem: tpl.status === "fulfilled" ? tpl.value : null,
+                renderingsItem: rndr.status === "fulfilled" ? rndr.value : null,
+                routeBaseTemplateItem: rt.status === "fulfilled" ? rt.value : null,
+              });
+            } else {
+              setSiteSettings(null);
+            }
           }
         })
-        .catch(() => { setSiteDetails(null); setSiteSettings(null); })
+        .catch(() => {
+          setSiteDetails(null);
+          setSiteSettings(null);
+        })
         .finally(() => setDetailsLoading(false));
     },
-    [client, sitecoreContextId, sites, setSelectedSite, setSiteDetails],
+    [client, sitecoreContextId, sites, setSelectedSite, setSiteDetails, setSiteSettings],
   );
 
   if (!selectedTenant) return null;

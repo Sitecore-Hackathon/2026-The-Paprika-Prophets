@@ -39,7 +39,11 @@ export function WizardShell({ children }: { children: React.ReactNode[] }) {
                     )}
                   />
                 )}
-                <div className="flex items-center gap-1.5">
+                <button
+                  className="flex items-center gap-1.5 disabled:cursor-default"
+                  onClick={() => process.env.NODE_ENV === "development" && goTo(index)}
+                  disabled={process.env.NODE_ENV !== "development"}
+                >
                   <span
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors",
@@ -62,7 +66,7 @@ export function WizardShell({ children }: { children: React.ReactNode[] }) {
                   >
                     {step.label}
                   </span>
-                </div>
+                </button>
               </div>
             ))}
           </div>

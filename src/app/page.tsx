@@ -6,6 +6,7 @@ import { TenantSelector } from "@/components/wizard/steps/tenant-selector";
 import { InstallationWizard } from "@/components/wizard/steps/installation-wizard";
 import { ComponentInput } from "@/components/wizard/steps/component-input";
 import { AnalysisResults } from "@/components/wizard/steps/analysis-results";
+import { CreateSitecoreStructure } from "@/components/wizard/steps/create-structure";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         <InstallationWizard />
         <ComponentInput />
         <AnalysisResults />
+        <CreateSitecoreStructure />
       </WizardShell>
     </WizardProvider>
   );
