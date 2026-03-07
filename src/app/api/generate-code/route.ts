@@ -43,13 +43,22 @@ Map Sitecore field types to TypeScript types:
 - Checkbox         → Field<boolean>
 - Integer / Number → Field<number>
 
+═══ FIELD NAMES (CRITICAL) ════════════════════════════════
+You MUST use the EXACT field names from the provided template JSON.
+Do NOT rename, simplify, or abbreviate field names.
+If a template defines a field named "CardTitle", use \`fields.CardTitle\` — NOT \`fields.Title\`.
+If a template defines "BackgroundImage", use \`fields.BackgroundImage\` — NOT \`fields.Image\`.
+The interface keys, JSX field references, and all code must match the template's field "name" values exactly.
+
 ═══ PROPS PATTERN ═════════════════════════════════════════
-Define a Fields interface + a Props type that intersects ComponentProps:
+Define a Fields interface + a Props type that intersects ComponentProps.
+Use the EXACT field names from the template definitions — do not rename them.
 \`\`\`ts
+// Example: if the template has fields named "HeroTitle", "HeroImage", "CtaLink"
 interface Fields {
-  Title: Field<string>;
+  HeroTitle: Field<string>;
   HeroImage: ImageField;
-  CallToAction: LinkField;
+  CtaLink: LinkField;
 }
 
 type MyComponentProps = ComponentProps & {
@@ -275,6 +284,12 @@ function buildUserPrompt(
   lines.push("");
   lines.push(
     "For each component, generate the Content SDK compatible code as described in the system instructions.",
+  );
+  lines.push("");
+  lines.push(
+    "CRITICAL: Use the EXACT field names from each template's \"fields\" array. " +
+    "The \"name\" property of each field must appear verbatim in the Fields interface and JSX references. " +
+    "Do NOT rename, shorten, or simplify them (e.g. if the field name is \"CardTitle\", use \"CardTitle\", NOT \"Title\").",
   );
 
   return lines.join("\n");
