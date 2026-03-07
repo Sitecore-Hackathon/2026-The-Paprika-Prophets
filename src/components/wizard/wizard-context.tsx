@@ -38,6 +38,7 @@ const STEPS: WizardStep[] = [
   { id: "tenant-selector", label: "Select Tenant" },
   { id: "installation-wizard", label: "Installation" },
   { id: "component-input", label: "Component Input" },
+  { id: "analysis-results", label: "Results" },
 ];
 
 export function WizardProvider({ children }: { children: ReactNode }) {

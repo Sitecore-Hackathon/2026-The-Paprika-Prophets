@@ -5,6 +5,7 @@ import { WizardShell } from "@/components/wizard/wizard-shell";
 import { TenantSelector } from "@/components/wizard/steps/tenant-selector";
 import { InstallationWizard } from "@/components/wizard/steps/installation-wizard";
 import { ComponentInput } from "@/components/wizard/steps/component-input";
+import { AnalysisResults } from "@/components/wizard/steps/analysis-results";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
         <TenantSelector />
         <InstallationWizard />
         <ComponentInput />
+        <AnalysisResults />
       </WizardShell>
     </WizardProvider>
   );
