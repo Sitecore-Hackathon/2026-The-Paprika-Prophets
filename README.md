@@ -30,7 +30,7 @@
 
 - **Sitecore AI** (formerly XM Cloud) — the app is built for Sitecore AI and requires an active environment.
 - **OpenAI API key** — required for AI-powered screenshot/HTML analysis and code generation.
-- **Content SDK CLI** — the generated code follows `@sitecore-content-sdk/nextjs` patterns. Install the CLI and its required peer dependency globally so you can scaffold components into your Next.js project:
+- **Content SDK CLI** *(for your Content SDK Next.js project, not this repo)* — Component Forge generates code and terminal commands that use the Content SDK CLI to scaffold components into your Next.js app. Install the CLI and its required peer dependency globally in the environment where your Content SDK project lives:
   ```bash
   npm install -g typescript @sitecore-content-sdk/cli
   ```
