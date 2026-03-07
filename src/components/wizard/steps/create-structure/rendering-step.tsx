@@ -11,13 +11,11 @@ import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemConfig } from "@/lib/types/graphql";
-import { DEFAULT_LANGUAGE } from "@/lib/constants";
+import { DEFAULT_LANGUAGE, WELL_KNOWN_TEMPLATES } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
 
-// StandardAI / JSS JSON rendering template
-const JSON_RENDERING_TEMPLATE_ID = "{04646A89-996F-4EE7-878A-FFDBF1F0EF0D}";
 
 export const RenderingStep = () => {
   const { data } = useWizard();
@@ -103,7 +101,7 @@ export const RenderingStep = () => {
 
       const config: ItemConfig = {
         name: resolvedName,
-        templateId: JSON_RENDERING_TEMPLATE_ID,
+        templateId: WELL_KNOWN_TEMPLATES.JSON_RENDERING,
         parentId,
         parentPath: selectedTreeItem?.path ?? "",
         language: DEFAULT_LANGUAGE,

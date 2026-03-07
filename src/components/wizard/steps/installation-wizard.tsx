@@ -43,7 +43,7 @@ function StepIndicator({ step }: { step: InstallationStep }) {
   );
 }
 
-export function InstallationWizard() {
+export const InstallationWizard = () => {
   const { goNext, goBack, setStepData } = useWizard();
   const client = useMarketplaceClient();
   const appContext = useAppContext();
@@ -74,8 +74,7 @@ export function InstallationWizard() {
     setCheckingSettings(true);
     try {
       const authoring = service.getAuthoringService();
-      const settingsPath =
-        SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Settings";
+      const settingsPath = SITECORE_PATHS.MODULE.SETTINGS;
       const item = await authoring.getItemWithFields(settingsPath);
       if (item) {
         const fields = item.fields?.nodes ?? [];

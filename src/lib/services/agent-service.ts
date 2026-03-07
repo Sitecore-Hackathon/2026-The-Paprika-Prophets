@@ -4,10 +4,10 @@ import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
 type ApiResponse<T> = { data?: T; error?: { detail?: string } };
 
-export async function fetchLanguages(
+export const fetchLanguages = async (
   client: ClientSDK,
   sitecoreContextId: string,
-): Promise<experimental_Sites.Language[]> {
+): Promise<experimental_Sites.Language[]> => {
   try {
     const response = await client.query("xmc.sites.listLanguages", {
       params: { query: { sitecoreContextId } },
@@ -20,10 +20,10 @@ export async function fetchLanguages(
   }
 }
 
-export async function fetchSites(
+export const fetchSites = async (
   client: ClientSDK,
   sitecoreContextId: string,
-): Promise<experimental_Agent.SiteBasicModel[]> {
+): Promise<experimental_Agent.SiteBasicModel[]> => {
   try {
     const response = await client.query("xmc.agent.sitesGetSitesList", {
       params: { query: { sitecoreContextId } },
@@ -37,11 +37,11 @@ export async function fetchSites(
   }
 }
 
-export async function fetchSiteDetails(
+export const fetchSiteDetails = async (
   client: ClientSDK,
   sitecoreContextId: string,
   siteId: string,
-): Promise<experimental_Agent.SiteInformationResponse | null> {
+): Promise<experimental_Agent.SiteInformationResponse | null> => {
   try {
     const response = await client.query("xmc.agent.sitesGetSiteDetails", {
       params: { path: { siteId }, query: { sitecoreContextId } },
@@ -53,7 +53,7 @@ export async function fetchSiteDetails(
   }
 }
 
-export async function createPage(
+export const createPage = async (
   client: ClientSDK,
   sitecoreContextId: string,
   config: {
@@ -62,7 +62,7 @@ export async function createPage(
     name: string;
     language?: string;
   },
-): Promise<experimental_Agent.CreatePageResponse> {
+): Promise<experimental_Agent.CreatePageResponse> => {
   try {
     const result = await client.mutate("xmc.agent.pagesCreatePage", {
       params: {
@@ -82,7 +82,7 @@ export async function createPage(
   }
 }
 
-export async function addComponentOnPage(
+export const addComponentOnPage = async (
   client: ClientSDK,
   sitecoreContextId: string,
   config: {
@@ -92,7 +92,7 @@ export async function addComponentOnPage(
     componentItemName: string;
     language?: string;
   },
-): Promise<experimental_Agent.AddComponentResponse> {
+): Promise<experimental_Agent.AddComponentResponse> => {
   try {
     const result = await client.mutate("xmc.agent.pagesAddComponentOnPage", {
       params: {
@@ -113,13 +113,13 @@ export async function addComponentOnPage(
   }
 }
 
-export async function updateComponentContent(
+export const updateComponentContent = async (
   client: ClientSDK,
   sitecoreContextId: string,
   itemId: string,
   fields: Record<string, unknown>,
   language: string = DEFAULT_LANGUAGE,
-): Promise<experimental_Agent.UpdateContentResponse> {
+): Promise<experimental_Agent.UpdateContentResponse> => {
   try {
     const result = await client.mutate("xmc.agent.contentUpdateContent", {
       params: {

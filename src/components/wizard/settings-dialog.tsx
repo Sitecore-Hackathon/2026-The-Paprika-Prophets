@@ -25,8 +25,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AuthoringService } from "@/lib/services/authoring-service";
 import { SITECORE_PATHS } from "@/lib/installation/constants";
+import { DEFAULT_ANALYSIS_MODEL, DEFAULT_CODING_MODEL } from "@/lib/constants";
 
-interface SettingsDialogProps {
+type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   authoringService: AuthoringService;
@@ -35,10 +36,9 @@ interface SettingsDialogProps {
     analysisLlmModel: string;
     codingLlmModel: string;
   }) => void;
-}
+};
 
-const SETTINGS_PATH =
-  SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Settings";
+const SETTINGS_PATH = SITECORE_PATHS.MODULE.SETTINGS;
 
 /* ── Model catalogue ───────────────────────────────────────────── */
 
@@ -74,35 +74,33 @@ const CODING_MODEL_GROUPS: ModelGroup[] = [
   { label: "GPT-5 Series", models: GPT5_MODELS },
 ];
 
-function ModelSelectContent({ groups }: { groups: ModelGroup[] }) {
-  return (
-    <>
-      {groups.map((group, gi) => (
-        <Fragment key={group.label}>
-          {gi > 0 && <SelectSeparator />}
-          <SelectGroup>
-            <SelectLabel>{group.label}</SelectLabel>
-            {group.models.map((m) => (
-              <SelectItem key={m.value} value={m.value}>
-                {m.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </Fragment>
-      ))}
-    </>
-  );
-}
+const ModelSelectContent = ({ groups }: { groups: ModelGroup[] }) => (
+  <>
+    {groups.map((group, gi) => (
+      <Fragment key={group.label}>
+        {gi > 0 && <SelectSeparator />}
+        <SelectGroup>
+          <SelectLabel>{group.label}</SelectLabel>
+          {group.models.map((m) => (
+            <SelectItem key={m.value} value={m.value}>
+              {m.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </Fragment>
+    ))}
+  </>
+);
 
-export function SettingsDialog({
+export const SettingsDialog = ({
   open,
   onOpenChange,
   authoringService,
   onSaved,
-}: SettingsDialogProps) {
+}: SettingsDialogProps) => {
   const [openAiApiKey, setOpenAiApiKey] = useState("");
-  const [analysisLlmModel, setAnalysisLlmModel] = useState("gpt-5-mini");
-  const [codingLlmModel, setCodingLlmModel] = useState("gpt-5.3-codex");
+  const [analysisLlmModel, setAnalysisLlmModel] = useState(DEFAULT_ANALYSIS_MODEL);
+  const [codingLlmModel, setCodingLlmModel] = useState(DEFAULT_CODING_MODEL);
   const [settingsItemId, setSettingsItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -125,9 +123,9 @@ export function SettingsDialog({
         );
         if (apiKeyField) setOpenAiApiKey(apiKeyField.value);
         if (analysisModelField)
-          setAnalysisLlmModel(analysisModelField.value || "gpt-5-mini");
+          setAnalysisLlmModel(analysisModelField.value || DEFAULT_ANALYSIS_MODEL);
         if (codingModelField)
-          setCodingLlmModel(codingModelField.value || "gpt-5.3-codex");
+          setCodingLlmModel(codingModelField.value || DEFAULT_CODING_MODEL);
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load settings");

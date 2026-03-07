@@ -8,7 +8,7 @@ type Props = {
   items: ConflictItem[];
 };
 
-export function NameConflictAlert({ items }: Props) {
+export const NameConflictAlert = ({ items }: Props) => {
   if (items.length === 0) return null;
 
   return (

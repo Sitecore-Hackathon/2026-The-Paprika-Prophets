@@ -16,8 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnalysisLoader } from "../analysis-loader";
 import { useRunLog } from "@/components/providers/run-log-provider";
+import { HEADERS } from "@/lib/constants";
 
-export function ComponentInput() {
+export const ComponentInput = () => {
   const { goNext, goBack, data, setStepData } = useWizard();
   const { selectedTenant } = useTenantContext();
   const { startRun, recordStep } = useRunLog();
@@ -88,9 +89,9 @@ export function ComponentInput() {
         method: "POST",
         body: formData,
         headers: {
-          "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
-          ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
-          ...(analysisModel ? { "x-analysis-model": analysisModel } : {}),
+          [HEADERS.TENANT_ID]: selectedTenant?.tenantId ?? "unknown",
+          ...(openAiApiKey ? { [HEADERS.OPENAI_KEY]: openAiApiKey } : {}),
+          ...(analysisModel ? { [HEADERS.ANALYSIS_MODEL]: analysisModel } : {}),
         },
       });
 
@@ -131,9 +132,9 @@ export function ComponentInput() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-tenant-id": selectedTenant?.tenantId ?? "unknown",
-          ...(openAiApiKey ? { "x-openai-key": openAiApiKey } : {}),
-          ...(analysisModel ? { "x-analysis-model": analysisModel } : {}),
+          [HEADERS.TENANT_ID]: selectedTenant?.tenantId ?? "unknown",
+          ...(openAiApiKey ? { [HEADERS.OPENAI_KEY]: openAiApiKey } : {}),
+          ...(analysisModel ? { [HEADERS.ANALYSIS_MODEL]: analysisModel } : {}),
         },
         body: JSON.stringify({ html: htmlContent }),
       });

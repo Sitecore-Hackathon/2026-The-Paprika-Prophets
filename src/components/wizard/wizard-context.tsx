@@ -9,17 +9,17 @@ import {
   type ReactNode,
 } from "react";
 
-export interface WizardStep {
+export type WizardStep = {
   id: string;
   label: string;
-}
+};
 
-interface WizardState {
+type WizardState = {
   currentStepIndex: number;
   data: Record<string, unknown>;
-}
+};
 
-interface WizardContextValue {
+type WizardContextValue = {
   steps: WizardStep[];
   currentStepIndex: number;
   currentStep: WizardStep;
@@ -30,7 +30,7 @@ interface WizardContextValue {
   goBack: () => void;
   goTo: (index: number) => void;
   setStepData: (key: string, value: unknown) => void;
-}
+};
 
 const WizardContext = createContext<WizardContextValue | null>(null);
 
@@ -43,7 +43,7 @@ const STEPS: WizardStep[] = [
   { id: "code-generation", label: "Code Generation" },
 ];
 
-export function WizardProvider({
+export const WizardProvider = ({
   children,
   initialStep = 0,
   initialData = {},
@@ -51,7 +51,7 @@ export function WizardProvider({
   children: ReactNode;
   initialStep?: number;
   initialData?: Record<string, unknown>;
-}) {
+}) => {
   const [state, setState] = useState<WizardState>({
     currentStepIndex: initialStep,
     data: initialData,
@@ -106,10 +106,10 @@ export function WizardProvider({
   );
 }
 
-export function useWizard() {
+export const useWizard = (): WizardContextValue => {
   const context = useContext(WizardContext);
   if (!context) {
     throw new Error("useWizard must be used within a WizardProvider");
   }
   return context;
-}
+};

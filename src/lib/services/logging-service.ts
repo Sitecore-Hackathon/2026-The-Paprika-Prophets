@@ -15,7 +15,7 @@ import { DEFAULT_LANGUAGE } from "@/lib/constants";
 /* ── Types ─────────────────────────────────────────────────────── */
 
 /** Metadata returned by each API route alongside its normal response. */
-export interface AiCallMetadata {
+export type AiCallMetadata = {
   stepName: string;
   model: string;
   promptTokens: number;
@@ -23,10 +23,10 @@ export interface AiCallMetadata {
   totalTokens: number;
   durationMs: number;
   timestamp: string; // ISO 8601
-}
+};
 
 /** A single step within a run — mirrors the RunStep Sitecore template. */
-export interface RunStep {
+export type RunStep = {
   stepName: string;
   stepOrder: number;
   timestamp: string;
@@ -35,10 +35,10 @@ export interface RunStep {
   completionTokens: number;
   totalTokens: number;
   durationMs: number;
-}
+};
 
 /** A full run — mirrors the Run Sitecore template. */
-export interface RunLog {
+export type RunLog = {
   runId: string;
   runDate: string;
   runStatus: "in-progress" | "completed" | "failed" | "partial";
@@ -49,33 +49,31 @@ export interface RunLog {
   totalDuration: number;
   componentCount: number;
   steps: RunStep[];
-}
+};
 
 /* ── Factory ───────────────────────────────────────────────────── */
 
 /** Create a new empty RunLog. */
-export function createRunLog(
+export const createRunLog = (
   inputSource: RunLog["inputSource"],
   userName: string = "unknown",
-): RunLog {
-  return {
-    runId: crypto.randomUUID(),
-    runDate: new Date().toISOString(),
-    runStatus: "in-progress",
-    userName,
-    inputSource,
-    generatedCode: "",
-    totalTokensUsed: 0,
-    totalDuration: 0,
-    componentCount: 0,
-    steps: [],
-  };
-}
+): RunLog => ({
+  runId: crypto.randomUUID(),
+  runDate: new Date().toISOString(),
+  runStatus: "in-progress",
+  userName,
+  inputSource,
+  generatedCode: "",
+  totalTokensUsed: 0,
+  totalDuration: 0,
+  componentCount: 0,
+  steps: [],
+});
 
 /* ── Accumulation helpers ──────────────────────────────────────── */
 
 /** Add an AI call step to the run log and update totals. */
-export function addStep(run: RunLog, metadata: AiCallMetadata): RunLog {
+export const addStep = (run: RunLog, metadata: AiCallMetadata): RunLog => {
   const step: RunStep = {
     stepName: metadata.stepName,
     stepOrder: run.steps.length + 1,
@@ -93,28 +91,26 @@ export function addStep(run: RunLog, metadata: AiCallMetadata): RunLog {
     totalDuration: run.totalDuration + metadata.durationMs,
     steps: [...run.steps, step],
   };
-}
+};
 
 /** Mark the run as completed and attach final results. */
-export function finalizeRun(
+export const finalizeRun = (
   run: RunLog,
   results: {
     generatedCode?: string;
     componentCount?: number;
     status?: RunLog["runStatus"];
   },
-): RunLog {
-  return {
-    ...run,
-    runStatus: results.status ?? "completed",
-    generatedCode: results.generatedCode ?? run.generatedCode,
-    componentCount: results.componentCount ?? run.componentCount,
-  };
-}
+): RunLog => ({
+  ...run,
+  runStatus: results.status ?? "completed",
+  generatedCode: results.generatedCode ?? run.generatedCode,
+  componentCount: results.componentCount ?? run.componentCount,
+});
 
 /* ── Sitecore persistence ──────────────────────────────────────── */
 
-const LOGS_PATH = SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Logs";
+const LOGS_PATH = SITECORE_PATHS.MODULE.LOGS;
 
 /**
  * Persist a RunLog to Sitecore as a Run item with RunStep children.
@@ -126,11 +122,11 @@ const LOGS_PATH = SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Logs";
  *     /02-<stepName>
  *     ...
  */
-export async function saveRunToSitecore(
+export const saveRunToSitecore = async (
   authoring: AuthoringService,
   run: RunLog,
   templateIds: { runTemplateId: string; runStepTemplateId: string },
-): Promise<{ success: boolean; runItemId?: string; error?: string }> {
+): Promise<{ success: boolean; runItemId?: string; error?: string }> => {
   try {
     // 1. Create the Run item
     const runName = `Run-${run.runDate.slice(0, 19).replace(/[T:]/g, "-")}`;
@@ -208,9 +204,9 @@ function truncateForSitecore(text: string, maxLength: number = 50_000): string {
 }
 
 /** Export the full RunLog as a downloadable JSON blob URL. */
-export function exportRunAsJson(run: RunLog): string {
+export const exportRunAsJson = (run: RunLog): string => {
   const blob = new Blob([JSON.stringify(run, null, 2)], {
     type: "application/json",
   });
   return URL.createObjectURL(blob);
-}
+};

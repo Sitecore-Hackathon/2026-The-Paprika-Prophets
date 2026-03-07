@@ -12,6 +12,11 @@ export const SITECORE_PATHS = {
     ROOT: "/sitecore/content",
     HOME: "/sitecore/content/Home",
   },
+  MODULE: {
+    ROOT: "/sitecore/system/Modules/Component Forge",
+    SETTINGS: "/sitecore/system/Modules/Component Forge/Settings",
+    LOGS: "/sitecore/system/Modules/Component Forge/Logs",
+  },
 } as const;
 
 export const SITECORE_IDS = {
