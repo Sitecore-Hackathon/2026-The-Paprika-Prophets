@@ -1,16 +1,7 @@
-import type { ItemConfig } from "../types";
+import type { ItemConfig } from "../../types/graphql";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
-/** Escape a string for embedding inside a GraphQL string literal (double-quoted). */
-function escapeGraphQL(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r")
-    .replace(/\t/g, "\\t");
-}
-
-export const buildCreateItemMutation = (config: ItemConfig) => {
+export const buildCreateItemMutation = (config: ItemConfig): string => {
   const fields = config.fields
     ? config.fields.map((f) => `{ name: "${escapeGraphQL(f.name)}", value: "${escapeGraphQL(f.value)}" }`).join("\n        ")
     : "";
@@ -24,7 +15,7 @@ export const buildCreateItemMutation = (config: ItemConfig) => {
           name: "${escapeGraphQL(config.name)}"
           templateId: "${config.templateId}"
           parent: "${config.parentId}"
-          language: "${config.language || "en"}"
+          language: "${config.language ?? DEFAULT_LANGUAGE}"
           ${fieldsBlock}
         }
       ) {
@@ -44,7 +35,7 @@ export const buildCreateItemMutation = (config: ItemConfig) => {
   `;
 };
 
-export const buildDeleteItemMutation = (path: string, permanently: boolean = false) => `
+export const buildDeleteItemMutation = (path: string, permanently: boolean = false): string => `
   mutation {
     deleteItem(
       input: {
@@ -61,7 +52,7 @@ export const buildUpdateItemFieldsMutation = (
   itemId: string,
   language: string,
   fields: Array<{ name: string; value: string }>,
-) => {
+): string => {
   const fieldUpdates = fields
     .map((f) => `{ name: "${escapeGraphQL(f.name)}", value: "${escapeGraphQL(f.value)}" }`)
     .join("\n        ");
@@ -86,3 +77,12 @@ export const buildUpdateItemFieldsMutation = (
     }
   `;
 };
+
+function escapeGraphQL(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}

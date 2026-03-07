@@ -1,10 +1,12 @@
-import type { TemplateConfig } from "../types";
+import type { TemplateConfig } from "../../types/graphql";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
-export const buildCreateTemplateMutation = (config: TemplateConfig) => {
+export const buildCreateTemplateMutation = (config: TemplateConfig): string => {
+  const language = config.language ?? DEFAULT_LANGUAGE;
+
   const sectionsBlock = config.sections
     .map((section) => {
       if (section.fields.length === 0) return null;
-
       const fieldsArray = section.fields
         .map((field) => {
           const title = field.displayName ? `, title: "${field.displayName}"` : "";
@@ -12,7 +14,6 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
           return `{ name: "${field.name}", type: "${field.type}"${title}${source} }`;
         })
         .join("\n          ");
-
       return `{
         name: "${section.name}"
         fields: [
@@ -23,17 +24,13 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
     .filter(Boolean)
     .join("\n      ");
 
-  const sectionsContent = sectionsBlock ?? "";
+  const baseTemplatesBlock = config.baseTemplateIds?.length
+    ? `baseTemplates: [${config.baseTemplateIds.map((id) => `"${id}"`).join(", ")}]`
+    : "";
 
-  const language = config.language ?? "en";
-  const baseTemplatesBlock =
-    config.baseTemplateIds?.length
-      ? `baseTemplates: [${config.baseTemplateIds.map((id) => `"${id}"`).join(", ")}]`
-      : "";
-  const createStandardValuesItem =
-    config.createStandardValuesItem !== undefined
-      ? `createStandardValuesItem: ${config.createStandardValuesItem}`
-      : "";
+  const createStandardValuesItem = config.createStandardValuesItem !== undefined
+    ? `createStandardValuesItem: ${config.createStandardValuesItem}`
+    : "";
 
   return `
     mutation {
@@ -45,7 +42,7 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
           ${createStandardValuesItem}
           ${baseTemplatesBlock}
           sections: [
-            ${sectionsContent}
+            ${sectionsBlock}
           ]
         }
       ) {
@@ -66,16 +63,3 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
     }
   `;
 };
-
-export const buildDeleteTemplateMutation = (templateId: string) => `
-  mutation {
-    deleteItem(
-      input: {
-        itemId: "${templateId}"
-        permanently: false
-      }
-    ) {
-      successful
-    }
-  }
-`;

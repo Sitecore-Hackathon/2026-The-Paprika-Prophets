@@ -23,7 +23,7 @@ export type SiteContextType = {
 
 const SiteContext = createContext<SiteContextType | undefined>(undefined);
 
-export function SiteProvider({ children }: { children: ReactNode }) {
+export const SiteProvider = ({ children }: { children: ReactNode }) => {
   const [selectedSite, setSelectedSite] = useState<experimental_Agent.SiteBasicModel | null>(null);
   const [siteDetails, setSiteDetails] = useState<experimental_Agent.SiteInformationResponse | null>(null);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
@@ -48,12 +48,10 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   );
 
   return <SiteContext.Provider value={value}>{children}</SiteContext.Provider>;
-}
+};
 
-export function useSiteContext(): SiteContextType {
+export const useSiteContext = (): SiteContextType => {
   const context = useContext(SiteContext);
-  if (!context) {
-    throw new Error("useSiteContext must be used within a SiteProvider");
-  }
+  if (!context) throw new Error("useSiteContext must be used within a SiteProvider");
   return context;
-}
+};

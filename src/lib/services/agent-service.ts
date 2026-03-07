@@ -1,13 +1,8 @@
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
 import type { experimental_Agent, experimental_Sites } from "@sitecore-marketplace-sdk/xmc";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
-function extractApiError(err: unknown, fallback: string): Error {
-  const detail =
-    (err as { error?: { detail?: string } } | null)?.error?.detail ??
-    (err instanceof Error ? err.message : null) ??
-    fallback;
-  return new Error(detail);
-}
+type ApiResponse<T> = { data?: T; error?: { detail?: string } };
 
 export async function fetchLanguages(
   client: ClientSDK,
@@ -17,10 +12,10 @@ export async function fetchLanguages(
     const response = await client.query("xmc.sites.listLanguages", {
       params: { query: { sitecoreContextId } },
     });
-    const data = (response as { data?: { data?: experimental_Sites.Language[] } })?.data?.data;
+    const data = (response as ApiResponse<{ data?: experimental_Sites.Language[] }>).data?.data;
     return Array.isArray(data) ? data : [];
   } catch (err) {
-    console.error("[agent-service] fetchLanguages failed:", err);
+    console.error("[agent-service] fetchLanguages failed:", extractApiError(err, "Fetch languages failed").message);
     return [];
   }
 }
@@ -33,12 +28,12 @@ export async function fetchSites(
     const response = await client.query("xmc.agent.sitesGetSitesList", {
       params: { query: { sitecoreContextId } },
     });
-    const apiData = (response?.data as { data?: unknown })?.data;
-    if (Array.isArray(apiData)) return apiData as experimental_Agent.SiteBasicModel[];
-    return (apiData as { sites?: experimental_Agent.SiteBasicModel[] } | null)?.sites ?? [];
+    const inner = (response as ApiResponse<{ data?: unknown }>).data?.data;
+    if (Array.isArray(inner)) return inner as experimental_Agent.SiteBasicModel[];
+    return (inner as { sites?: experimental_Agent.SiteBasicModel[] } | null)?.sites ?? [];
   } catch (err) {
     console.error("[agent-service] fetchSites failed:", err);
-    throw err;
+    throw extractApiError(err, "Fetch sites failed");
   }
 }
 
@@ -49,17 +44,12 @@ export async function fetchSiteDetails(
 ): Promise<experimental_Agent.SiteInformationResponse | null> {
   try {
     const response = await client.query("xmc.agent.sitesGetSiteDetails", {
-      params: {
-        path: { siteId },
-        query: { sitecoreContextId },
-      },
+      params: { path: { siteId }, query: { sitecoreContextId } },
     });
-    return (
-      response?.data as { data?: experimental_Agent.SiteInformationResponse }
-    )?.data ?? null;
+    return (response as ApiResponse<{ data?: experimental_Agent.SiteInformationResponse }>).data?.data ?? null;
   } catch (err) {
     console.error("[agent-service] fetchSiteDetails failed:", err);
-    throw err;
+    throw extractApiError(err, "Fetch site details failed");
   }
 }
 
@@ -81,13 +71,11 @@ export async function createPage(
           parentId: config.parentId,
           templateId: config.templateId,
           name: config.name,
-          language: config.language ?? "en",
+          language: config.language ?? DEFAULT_LANGUAGE,
         },
       },
     });
-    const r = result as { data?: experimental_Agent.CreatePageResponse; error?: { detail?: string } };
-    if (!r.data) throw new Error(r.error?.detail ?? "Page creation failed");
-    return r.data;
+    return unwrapMutation<experimental_Agent.CreatePageResponse>(result, "Page creation failed");
   } catch (err) {
     console.error("[agent-service] createPage failed:", err);
     throw extractApiError(err, "Page creation failed");
@@ -114,13 +102,11 @@ export async function addComponentOnPage(
           componentRenderingId: config.componentRenderingId,
           placeholderPath: config.placeholderPath,
           componentItemName: config.componentItemName,
-          language: config.language ?? "en",
+          language: config.language ?? DEFAULT_LANGUAGE,
         },
       },
     });
-    const r = result as { data?: experimental_Agent.AddComponentResponse; error?: { detail?: string } };
-    if (!r.data) throw new Error(r.error?.detail ?? "Add component failed");
-    return r.data;
+    return unwrapMutation<experimental_Agent.AddComponentResponse>(result, "Add component failed");
   } catch (err) {
     console.error("[agent-service] addComponentOnPage failed:", err);
     throw extractApiError(err, "Add component failed");
@@ -132,7 +118,7 @@ export async function updateComponentContent(
   sitecoreContextId: string,
   itemId: string,
   fields: Record<string, unknown>,
-  language: string = "en",
+  language: string = DEFAULT_LANGUAGE,
 ): Promise<experimental_Agent.UpdateContentResponse> {
   try {
     const result = await client.mutate("xmc.agent.contentUpdateContent", {
@@ -142,11 +128,24 @@ export async function updateComponentContent(
         body: { fields, language },
       },
     });
-    const r = result as { data?: experimental_Agent.UpdateContentResponse; error?: { detail?: string } };
-    if (!r.data) throw new Error(r.error?.detail ?? "Content update failed");
-    return r.data;
+    return unwrapMutation<experimental_Agent.UpdateContentResponse>(result, "Content update failed");
   } catch (err) {
     console.error("[agent-service] updateComponentContent failed:", err);
     throw extractApiError(err, "Content update failed");
   }
+}
+
+function extractApiError(err: unknown, fallback: string): Error {
+  const detail =
+    (err as { error?: { detail?: string } } | null)?.error?.detail ??
+    (err instanceof Error ? err.message : null) ??
+    fallback;
+  return new Error(detail);
+}
+
+/** Unwraps a mutation result, throwing a normalised error when `data` is absent. */
+function unwrapMutation<T>(result: unknown, fallback: string): T {
+  const r = result as ApiResponse<T>;
+  if (!r.data) throw new Error(r.error?.detail ?? fallback);
+  return r.data;
 }

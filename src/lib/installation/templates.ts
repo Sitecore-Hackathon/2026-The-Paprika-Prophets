@@ -1,4 +1,4 @@
-import type { TemplateConfig } from "@/lib/graphql/types";
+import type { TemplateConfig } from "@/lib/types/graphql";
 import { SITECORE_IDS, SITECORE_PATHS } from "./constants";
 
 export const COMPONENT_FORGE_FOLDER_TEMPLATE: TemplateConfig = {

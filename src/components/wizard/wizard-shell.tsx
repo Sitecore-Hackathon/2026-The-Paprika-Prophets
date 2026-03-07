@@ -3,7 +3,7 @@
 import { useWizard } from "./wizard-context";
 import { TenantSiteHeader } from "./tenant-site-header";
 import { useTenantContext } from "@/components/providers/tenant-provider";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 import { useEffect } from "react";
 
 export function WizardShell({ children }: { children: React.ReactNode[] }) {

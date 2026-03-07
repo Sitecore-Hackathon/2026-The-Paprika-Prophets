@@ -6,8 +6,6 @@ export type ComponentField = {
   source: string;
 };
 
-
-
 export const REFERENCE_FIELD_TYPES = new Set(["Treelist", "Multilist", "Droptree", "Droplink"]);
 
 export type DesignHints = {

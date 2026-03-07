@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWizard } from "@/components/wizard/wizard-context";
-import { useMarketplaceClient } from "@/components/providers/marketplace";
+import { useMarketplaceClient } from "@/components/providers/marketplace-provider";
 import { useSiteContext } from "@/components/providers/site-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { useStructure } from "./structure-context";
@@ -17,7 +17,7 @@ import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import { createPage, addComponentOnPage, updateComponentContent, fetchLanguages } from "@/lib/services/agent-service";
 import type { AuthoringService } from "@/lib/services/authoring-service";
-import { generateDummyFieldValue } from "@/lib/dummy-fields";
+import { generateDummyFieldValue } from "@/lib/utils/dummy-fields";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemResult } from "./structure-context";
 import { usePreflightNames } from "./use-preflight-names";

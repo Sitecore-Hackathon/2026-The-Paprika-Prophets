@@ -725,24 +725,6 @@ export function AnalysisResults() {
         </CardContent>
       </Card>
 
-      {/* ═══ Debug: Raw JSON ═══ */}
-      {process.env.NODE_ENV === "development" && (
-        <Collapsible>
-          <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
-            ▶ Debug: Raw JSON
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4">
-                <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs font-mono max-h-96">
-                  {JSON.stringify({ groups: templateGroups, components }, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
-
       {/* ═══ Navigation ═══ */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={goBack}>Back</Button>

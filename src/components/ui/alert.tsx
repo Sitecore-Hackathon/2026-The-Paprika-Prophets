@@ -2,8 +2,8 @@ import { mdiAlertCircle, mdiCheckCircle, mdiInformation } from "@mdi/js";
 import { type VariantProps, cva } from "class-variance-authority";
 import type * as React from "react";
 
-import { Icon } from "@/lib/icon";
-import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils/tailwind";
 
 const alertVariants = cva(
   "relative w-full rounded-md px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-4 gap-y-0.5 items-center [&>svg]:size-4 [&>svg]:text-current",

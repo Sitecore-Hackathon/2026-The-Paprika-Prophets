@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useMarketplaceClient } from "@/components/providers/marketplace";
+import { useMarketplaceClient } from "@/components/providers/marketplace-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { AuthoringService } from "@/lib/services/authoring-service";
 

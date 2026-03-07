@@ -26,8 +26,3 @@ export const SITECORE_IDS = {
     HOME: "{110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9}",
   },
 } as const;
-
-export const DATABASE = {
-  MASTER: "master",
-  WEB: "web",
-} as const;

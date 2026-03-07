@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
-import type { ItemConfig } from "@/lib/graphql/types";
+import type { ItemConfig } from "@/lib/types/graphql";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";

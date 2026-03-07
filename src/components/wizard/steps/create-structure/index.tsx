@@ -7,7 +7,7 @@ import { RenderingStep } from "./rendering-step";
 import { ExamplePageStep } from "./example-page-step";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 
 const SUB_STEPS = [
   { id: "template", label: "Template" },

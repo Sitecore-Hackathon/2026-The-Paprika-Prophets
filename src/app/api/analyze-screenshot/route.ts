@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { rateLimit } from "@/lib/rate-limit";
-import { validateImageFile } from "@/lib/validation";
+import { rateLimit } from "@/lib/utils/rate-limit";
+import { validateImageFile } from "@/lib/utils/validation";
 import { SCREENSHOT_ANALYSIS_PROMPT } from "@/lib/analysis-prompt";
 
 export async function POST(request: NextRequest) {

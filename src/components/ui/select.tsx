@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@/lib/icon";
+import { Icon } from "@/components/ui/icon";
 import { mdiCheck, mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import type * as React from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 
 function Select({
   ...props

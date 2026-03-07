@@ -1,4 +1,4 @@
-import type { SitecoreItem } from "@/lib/graphql/types";
+import type { SitecoreItem } from "@/lib/types/graphql";
 
 export type SiteSettings = {
   RouteBaseTemplate: string | null;

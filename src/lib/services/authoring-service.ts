@@ -1,15 +1,12 @@
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
+import { DATABASE } from "@/lib/constants";
 import { buildGetItemQuery, buildGetItemWithFieldsQuery, buildGetItemByIdQuery, buildGetChildrenByIdQuery } from "@/lib/graphql/queries/items";
-import { buildGetTemplateQuery } from "@/lib/graphql/queries/templates";
 import {
   buildCreateItemMutation,
   buildDeleteItemMutation,
   buildUpdateItemFieldsMutation,
 } from "@/lib/graphql/mutations/items";
-import {
-  buildCreateTemplateMutation,
-  buildDeleteTemplateMutation,
-} from "@/lib/graphql/mutations/templates";
+import { buildCreateTemplateMutation } from "@/lib/graphql/mutations/templates";
 import type {
   GraphQLResponse,
   SitecoreItem,
@@ -18,7 +15,7 @@ import type {
   CreateTemplateResponse,
   CreateItemResponse,
   DeleteItemResponse,
-} from "@/lib/graphql/types";
+} from "@/lib/types/graphql";
 
 export class AuthoringService {
   constructor(
@@ -43,7 +40,7 @@ export class AuthoringService {
     return response;
   }
 
-  async getItem(path: string, database: string = "master"): Promise<SitecoreItem | null> {
+  async getItem(path: string, database: string = DATABASE.MASTER): Promise<SitecoreItem | null> {
     const query = buildGetItemQuery(path, database);
     const response = await this.executeQuery<{ item: SitecoreItem }>(query);
     return response?.data?.data?.item ?? null;
@@ -51,7 +48,7 @@ export class AuthoringService {
 
   async getItemWithFields(
     path: string,
-    database: string = "master",
+    database: string = DATABASE.MASTER,
   ): Promise<SitecoreItem | null> {
     const query = buildGetItemWithFieldsQuery(path, database);
     const response = await this.executeQuery<{ item: SitecoreItem }>(query);
@@ -80,12 +77,6 @@ export class AuthoringService {
     return response?.data?.data?.updateItem?.item ?? null;
   }
 
-  async getTemplate(path: string, database: string = "master"): Promise<SitecoreItem | null> {
-    const query = buildGetTemplateQuery(path, database);
-    const response = await this.executeQuery<{ item: SitecoreItem }>(query);
-    return response?.data?.data?.item ?? null;
-  }
-
   async createTemplate(config: TemplateConfig): Promise<{ templateId: string; standardValuesItemId: string | null }> {
     const mutation = buildCreateTemplateMutation(config);
     const response = await this.executeQuery<CreateTemplateResponse>(mutation);
@@ -95,30 +86,19 @@ export class AuthoringService {
     return { templateId, standardValuesItemId: itemTemplate?.standardValuesItem?.itemId ?? null };
   }
 
-  async deleteTemplate(templateId: string): Promise<boolean> {
-    const mutation = buildDeleteTemplateMutation(templateId);
-    const response = await this.executeQuery<DeleteItemResponse>(mutation);
-    return response?.data?.data?.deleteItem?.successful ?? false;
-  }
-
-  async itemExists(path: string): Promise<boolean> {
-    const item = await this.getItem(path);
-    return item !== null;
-  }
-
-  async getItemById(itemId: string, database: string = "master"): Promise<SitecoreItem | null> {
+  async getItemById(itemId: string, database: string = DATABASE.MASTER): Promise<SitecoreItem | null> {
     const query = buildGetItemByIdQuery(itemId, database);
     const response = await this.executeQuery<{ item: SitecoreItem }>(query);
     return response?.data?.data?.item ?? null;
   }
 
-  async getChildrenById(itemId: string, database: string = "master"): Promise<SitecoreItem[]> {
+  async getChildrenById(itemId: string, database: string = DATABASE.MASTER): Promise<SitecoreItem[]> {
     const query = buildGetChildrenByIdQuery(itemId, database);
     const response = await this.executeQuery<{ item: SitecoreItem }>(query);
     return response?.data?.data?.item?.children?.nodes ?? [];
   }
 
-  async getUniqueName(parentId: string, desiredName: string, database: string = "master"): Promise<string> {
+  async getUniqueName(parentId: string, desiredName: string, database: string = DATABASE.MASTER): Promise<string> {
     const children = await this.getChildrenById(parentId, database);
     const existingNames = children.map((c) => c.name);
 
