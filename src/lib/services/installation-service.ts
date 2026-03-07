@@ -6,7 +6,7 @@ import {
   type ItemConfigWithTemplateName,
 } from "@/lib/installation/items";
 import { SITECORE_IDS, SITECORE_PATHS } from "@/lib/installation/constants";
-import type { ItemConfig, TemplateConfig } from "@/lib/graphql/types";
+import type { ItemConfig, TemplateConfig } from "@/lib/types/graphql";
 
 export type InstallationState =
   | "checking"

@@ -7,8 +7,34 @@ import {
   fakerTH, fakerTR, fakerUK, fakerVI, fakerZH_CN,
 } from "@faker-js/faker";
 
-/** Returns the Faker instance for the Sitecore language code (e.g. "en-US", "de-DE", "zh-CN"). */
-function getfaker(language: string): Faker {
+/** Returns a locale-aware dummy value for a Sitecore field type. */
+export const generateDummyFieldValue = (fieldType: string, language = "en"): string => {
+  const f = getFaker(language);
+  const type = fieldType.toLowerCase().trim();
+
+  switch (type) {
+    case "single-line text": return singleLineText(f);
+    case "multi-line text":  return multiLineText(f);
+    case "rich text":        return richText(f);
+    case "number":           return numberValue(f);
+    case "integer":          return integerValue(f);
+    case "datetime":         return datetimeValue(f);
+    case "date":             return dateValue(f);
+    case "checkbox":         return checkboxValue(f);
+    case "general link":     return generalLink(f);
+    case "image":            return `<image mediaid='{04DAD0FD-DB66-4070-881F-17264CA257E1}' alt='${singleLineText(f)}'/>`;
+    case "file":             return "";
+    // Require item GUIDs – leave blank so they don't break validation
+    case "droplink":
+    case "droptree":
+    case "multilist":
+    case "treelist":
+    case "name value list":  return "";
+    default:                 return singleLineText(f);
+  }
+};
+
+function getFaker(language: string): Faker {
   const lang = language.toLowerCase();
   if (lang.startsWith("ar")) return fakerAR;
   if (lang.startsWith("cs")) return fakerCS_CZ;
@@ -40,8 +66,6 @@ function getfaker(language: string): Faker {
   if (lang.startsWith("zh")) return fakerZH_CN;
   return fakerEN;
 }
-
-/* ── Field generators ───────────────────────────────────────────────── */
 
 function singleLineText(f: Faker): string {
   return f.lorem.sentence({ min: 3, max: 8 }).replace(/\.$/, "");
@@ -87,61 +111,4 @@ function generalLink(f: Faker): string {
 
 function checkboxValue(f: Faker): string {
   return f.datatype.boolean() ? "1" : "0";
-}
-
-/* ── Public API ─────────────────────────────────────────────────────── */
-
-/** Returns a locale-aware dummy value for a Sitecore field type. */
-export function generateDummyFieldValue(
-  fieldType: string,
-  language = "en",
-): string {
-  const f = getfaker(language);
-  const type = fieldType.toLowerCase().trim();
-
-  switch (type) {
-    case "single-line text":
-      return singleLineText(f);
-
-    case "multi-line text":
-      return multiLineText(f);
-
-    case "rich text":
-      return richText(f);
-
-    case "number":
-      return numberValue(f);
-
-    case "integer":
-      return integerValue(f);
-
-    case "datetime":
-      return datetimeValue(f);
-
-    case "date":
-      return dateValue(f);
-
-    case "checkbox":
-      return checkboxValue(f);
-
-    case "general link":
-      return generalLink(f);
-
-    case "image":
-      return `<image mediaid='{04DAD0FD-DB66-4070-881F-17264CA257E1}' alt='${singleLineText(f)}'/>`;
-
-    case "file":
-      return "";
-
-    // Require item GUIDs – leave blank so they don't break validation
-    case "droplink":
-    case "droptree":
-    case "multilist":
-    case "treelist":
-    case "name value list":
-      return "";
-
-    default:
-      return singleLineText(f);
-  }
 }

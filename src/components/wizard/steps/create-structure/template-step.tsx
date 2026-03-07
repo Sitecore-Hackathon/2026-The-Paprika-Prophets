@@ -4,18 +4,17 @@ import { useCallback, useMemo, useState } from "react";
 import { useWizard } from "@/components/wizard/wizard-context";
 import { useSiteContext } from "@/components/providers/site-provider";
 import { useStructure, type ItemResult } from "./structure-context";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ErrorAlert } from "@/components/wizard/error-alert";
 import { Button } from "@/components/ui/button";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
-import type { TemplateConfig } from "@/lib/graphql/types";
+import type { TemplateConfig } from "@/lib/types/graphql";
 import type { AuthoringService } from "@/lib/services/authoring-service";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
-
-/* ── Constants ─────────────────────────────────────────────────────────── */
 
 /** Common/Folder base template for datasource folder items. */
 const COMMON_FOLDER_TEMPLATE_ID = "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}";
@@ -27,8 +26,6 @@ const ROLE_ORDER: Record<string, number> = {
   parent: 1,
   folder: 2,
 };
-
-/* ── Pure helpers ──────────────────────────────────────────────────────── */
 
 function sortedMembers(group: TemplateGroup) {
   return [...group.members].sort(
@@ -85,8 +82,6 @@ function buildDataTemplateConfig(
   };
 }
 
-/* ── Async creation helpers ────────────────────────────────────────────── */
-
 async function createFolderMember(
   svc: AuthoringService,
   group: TemplateGroup,
@@ -105,7 +100,7 @@ async function createFolderMember(
     const { templateId, standardValuesItemId } = await svc.createTemplate(config);
 
     if (insertTemplateId && standardValuesItemId) {
-      await svc.updateItemFields(standardValuesItemId, "en", [
+      await svc.updateItemFields(standardValuesItemId, DEFAULT_LANGUAGE, [
         { name: "__Masters", value: insertTemplateId },
       ]);
     }
@@ -152,7 +147,7 @@ async function createDataTemplateMember(
         (r) => r.groupId === group.id && r.role === "child",
       )?.id;
       if (childTemplateId) {
-        await svc.updateItemFields(standardValuesItemId, "en", [
+        await svc.updateItemFields(standardValuesItemId, DEFAULT_LANGUAGE, [
           { name: "__Masters", value: childTemplateId },
         ]);
       }
@@ -213,9 +208,7 @@ async function processGroups(
   return partial;
 }
 
-/* ── Component ─────────────────────────────────────────────────────────── */
-
-export function TemplateStep() {
+export const TemplateStep = () => {
   const { data } = useWizard();
   const { siteSettings } = useSiteContext();
   const { authoringService, template, setTemplate, advanceSubStep } = useStructure();
@@ -317,12 +310,7 @@ export function TemplateStep() {
 
       <NameConflictAlert items={renamedItems} />
 
-      {globalError && (
-        <Alert variant="danger">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{globalError}</AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={globalError} />
 
       <StepResultsCard results={results} />
 
@@ -331,4 +319,4 @@ export function TemplateStep() {
       </Button>
     </div>
   );
-}
+};

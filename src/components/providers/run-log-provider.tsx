@@ -15,10 +15,8 @@ import {
   finalizeRun,
 } from "@/lib/services/logging-service";
 
-/* ── Context shape ─────────────────────────────────────────────── */
-
-interface RunLogContextValue {
-  /** Start (or restart) a fresh run. Call when the analysis step begins. */
+type RunLogContextValue = {
+  /** Start (or restart) a fresh run. */
   startRun: (inputSource: RunLog["inputSource"]) => void;
   /** Append an AI-call step returned from an API route. */
   recordStep: (metadata: AiCallMetadata) => void;
@@ -26,14 +24,12 @@ interface RunLogContextValue {
   finalize: (results: Parameters<typeof finalizeRun>[1]) => void;
   /** Read the current RunLog snapshot. */
   getRunLog: () => RunLog | null;
-}
+};
 
 const RunLogContext = createContext<RunLogContextValue | null>(null);
 
-/* ── Provider ──────────────────────────────────────────────────── */
-
-export function RunLogProvider({ children }: { children: ReactNode }) {
-  // Use a ref so mutations don't trigger re-renders across the tree.
+export const RunLogProvider = ({ children }: { children: ReactNode }) => {
+  // Ref so mutations don't trigger re-renders across the tree.
   const runRef = useRef<RunLog | null>(null);
 
   const startRun = useCallback((inputSource: RunLog["inputSource"]) => {
@@ -57,14 +53,10 @@ export function RunLogProvider({ children }: { children: ReactNode }) {
       {children}
     </RunLogContext.Provider>
   );
-}
+};
 
-/* ── Hook ──────────────────────────────────────────────────────── */
-
-export function useRunLog(): RunLogContextValue {
+export const useRunLog = (): RunLogContextValue => {
   const ctx = useContext(RunLogContext);
-  if (!ctx) {
-    throw new Error("useRunLog must be used within a RunLogProvider");
-  }
+  if (!ctx) throw new Error("useRunLog must be used within a RunLogProvider");
   return ctx;
-}
+};

@@ -1,5 +1,6 @@
-import type { ItemConfig } from "@/lib/graphql/types";
+import type { ItemConfig } from "@/lib/types/graphql";
 import { SITECORE_IDS, SITECORE_PATHS } from "./constants";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
 export interface ItemConfigWithTemplateName extends Omit<ItemConfig, "templateId"> {
   templateName: string;
@@ -18,7 +19,7 @@ export const COMPONENT_FORGE_SETTINGS: ItemConfigWithTemplateName = {
   templateName: "ComponentForge Settings",
   parentId: SITECORE_IDS.SYSTEM.MODULES,
   parentPath: SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge",
-  language: "en",
+  language: DEFAULT_LANGUAGE,
   fields: [
     { name: "OpenAI API Key", value: "" },
     { name: "Analysis LLM Model", value: "gpt-5-mini" },

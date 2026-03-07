@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useMarketplaceClient } from "@/components/providers/marketplace";
+import { useMarketplaceClient } from "@/components/providers/marketplace-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { AuthoringService } from "@/lib/services/authoring-service";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
-import { Icon } from "@/lib/icon";
-import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils/tailwind";
 import {
   mdiChevronDown,
   mdiChevronRight,
@@ -16,7 +16,7 @@ import {
   mdiFolderOpen,
   mdiLoading,
 } from "@mdi/js";
-import type { SitecoreItem } from "@/lib/graphql/types";
+import type { SitecoreItem } from "@/lib/types/graphql";
 
 export type SelectedTreeItem = {
   itemId: string;

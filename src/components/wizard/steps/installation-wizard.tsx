@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWizard } from "../wizard-context";
-import { useMarketplaceClient, useAppContext } from "@/components/providers/marketplace";
+import { useMarketplaceClient, useAppContext } from "@/components/providers/marketplace-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   type InstallationStep,
 } from "@/lib/services/installation-service";
 import { SettingsDialog } from "../settings-dialog";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 
 function StepIndicator({ step }: { step: InstallationStep }) {
   return (

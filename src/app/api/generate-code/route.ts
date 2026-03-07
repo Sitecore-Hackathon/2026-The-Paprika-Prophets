@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { rateLimit } from "@/lib/rate-limit";
-import { sanitizeForPrompt } from "@/lib/validation";
+import { rateLimit } from "@/lib/utils/rate-limit";
+import { sanitizeForPrompt } from "@/lib/utils/validation";
 
 /* ── System prompt for code generation ─────────────────────────── */
 

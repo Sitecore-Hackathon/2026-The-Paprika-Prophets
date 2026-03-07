@@ -10,6 +10,7 @@
 
 import type { AuthoringService } from "./authoring-service";
 import { SITECORE_PATHS } from "@/lib/installation/constants";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -143,7 +144,7 @@ export async function saveRunToSitecore(
       templateId: templateIds.runTemplateId,
       parentId: logsFolder.itemId,
       parentPath: LOGS_PATH,
-      language: "en",
+      language: DEFAULT_LANGUAGE,
       fields: [
         { name: "RunId", value: run.runId },
         { name: "RunDate", value: toSitecoreDatetime(run.runDate) },
@@ -169,7 +170,7 @@ export async function saveRunToSitecore(
         templateId: templateIds.runStepTemplateId,
         parentId: runItem.itemId,
         parentPath: runItem.path,
-        language: "en",
+        language: DEFAULT_LANGUAGE,
         fields: [
           { name: "StepName", value: step.stepName },
           { name: "StepOrder", value: String(step.stepOrder) },

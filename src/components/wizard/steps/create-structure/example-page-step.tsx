@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWizard } from "@/components/wizard/wizard-context";
-import { useMarketplaceClient } from "@/components/providers/marketplace";
+import { useMarketplaceClient } from "@/components/providers/marketplace-provider";
 import { useSiteContext } from "@/components/providers/site-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { useStructure } from "./structure-context";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ErrorAlert } from "@/components/wizard/error-alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,20 +18,19 @@ import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import { createPage, addComponentOnPage, updateComponentContent, fetchLanguages } from "@/lib/services/agent-service";
 import type { AuthoringService } from "@/lib/services/authoring-service";
-import { generateDummyFieldValue } from "@/lib/dummy-fields";
+import { generateDummyFieldValue } from "@/lib/utils/dummy-fields";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemResult } from "./structure-context";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
 
-/* ── Constants ─────────────────────────────────────────────────────── */
 
 const CHILD_ITEM_COUNT = 3;
 /** Field types that hold pipe-separated item IDs (multivalue references). */
 const MULTIVALUE_FIELD_TYPES = new Set(["Treelist", "Multilist"]);
 
-/* ── Types ──────────────────────────────────────────────────────────── */
 
 type ComponentPlacement = {
   componentName: string;
@@ -48,7 +48,6 @@ type PageResult = {
   placements: ComponentPlacement[];
 };
 
-/* ── Helpers ────────────────────────────────────────────────────────── */
 
 /** Populates a datasource item with generated dummy values for every field on comp. */
 async function populateDatasourceContent(
@@ -257,9 +256,7 @@ async function processPlacement({
   return { componentName: comp.componentName, componentId, datasourceId, childIds, sharedDatasourceId, error: null };
 }
 
-/* ── Component ──────────────────────────────────────────────────────── */
-
-export function ExamplePageStep() {
+export const ExamplePageStep = () => {
   const { data } = useWizard();
   const { siteDetails, siteSettings } = useSiteContext();
   const client = useMarketplaceClient();
@@ -300,7 +297,7 @@ export function ExamplePageStep() {
   const [dsTreeItem, setDsTreeItem] = useState<SelectedTreeItem | null>(defaultDsParent);
   const [pageName, setPageName] = useState(`${components[0]?.componentName || "Example"}`);
   const [placeholder, setPlaceholder] = useState("headless-main");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [availableLanguages, setAvailableLanguages] = useState<{ name: string; displayName: string }[]>([]);
   const [languagesLoading, setLanguagesLoading] = useState(false);
   const [running, setRunning] = useState(false);
@@ -360,7 +357,7 @@ export function ExamplePageStep() {
     setPage((prev) => ({ ...prev, state: { ...prev.state, status: "running", error: null } }));
 
     const resolvedName = preflightName ?? (preflightInputName || pageName.trim());
-    const lang = language || "en";
+    const lang = language || DEFAULT_LANGUAGE;
 
     // On retry: reuse the already-created page
     const existingPageId = page.state.createdIds[0] ?? null;
@@ -572,7 +569,7 @@ export function ExamplePageStep() {
                 value={language}
                 onChange={(e) => { setLanguage(e.target.value); touch("language"); }}
                 onBlur={() => touch("language")}
-                placeholder={languagesLoading ? "Loading…" : "en"}
+                placeholder={languagesLoading ? "Loading…" : DEFAULT_LANGUAGE}
                 disabled={languagesLoading}
                 aria-invalid={!!fieldError("language", language)}
                 className={fieldError("language", language) ? "border-destructive focus-visible:ring-destructive" : ""}
@@ -597,12 +594,7 @@ export function ExamplePageStep() {
         </Alert>
       )}
 
-      {error && (
-        <Alert variant="danger">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={error} />
 
       {!isSuccess && !hasPlacementErrors && (
         <Button onClick={handleCreate} disabled={!canRun} className="w-full">
@@ -658,4 +650,4 @@ export function ExamplePageStep() {
       )}
     </div>
   );
-}
+};

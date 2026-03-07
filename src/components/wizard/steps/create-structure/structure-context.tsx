@@ -8,9 +8,10 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useMarketplaceClient } from "@/components/providers/marketplace";
+import { useMarketplaceClient } from "@/components/providers/marketplace-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { AuthoringService } from "@/lib/services/authoring-service";
+import type { TemplateMemberRole } from "@/lib/types/component";
 
 export type SubStepStatus = "idle" | "running" | "done" | "error";
 
@@ -22,7 +23,7 @@ export type SubStepState = {
 
 export type ItemResult = {
   groupId: string;
-  role: "parent" | "child" | "folder" | "standalone";
+  role: TemplateMemberRole;
   originalName: string;
   resolvedName: string;
   path: string | null;
@@ -55,7 +56,7 @@ const StructureContext = createContext<StructureContextType | undefined>(
   undefined,
 );
 
-export function StructureProvider({ children }: { children: ReactNode }) {
+export const StructureProvider = ({ children }: { children: ReactNode }) => {
   const client = useMarketplaceClient();
   const { selectedTenant } = useTenantContext();
 
@@ -104,16 +105,16 @@ export function StructureProvider({ children }: { children: ReactNode }) {
       {children}
     </StructureContext.Provider>
   );
-}
+};
 
-export function useStructure(): StructureContextType {
+export const useStructure = (): StructureContextType => {
   const ctx = useContext(StructureContext);
   if (!ctx) throw new Error("useStructure must be used within StructureProvider");
   return ctx;
-}
+};
 
-export function useResetStructure() {
+export const useResetStructure = () => {
   const { resetStructure } = useStructure();
   return resetStructure;
-}
+};
 

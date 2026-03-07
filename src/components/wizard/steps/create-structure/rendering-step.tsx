@@ -4,12 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useWizard } from "@/components/wizard/wizard-context";
 import { useSiteContext } from "@/components/providers/site-provider";
 import { useStructure, type ItemResult } from "./structure-context";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ErrorAlert } from "@/components/wizard/error-alert";
 import { Button } from "@/components/ui/button";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
-import type { ItemConfig } from "@/lib/graphql/types";
+import type { ItemConfig } from "@/lib/types/graphql";
+import { DEFAULT_LANGUAGE } from "@/lib/constants";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
@@ -17,7 +19,7 @@ import { StepResultsCard } from "./step-results-card";
 // StandardAI / JSS JSON rendering template
 const JSON_RENDERING_TEMPLATE_ID = "{04646A89-996F-4EE7-878A-FFDBF1F0EF0D}";
 
-export function RenderingStep() {
+export const RenderingStep = () => {
   const { data } = useWizard();
   const { siteSettings } = useSiteContext();
   const { authoringService, template, rendering, setRendering, advanceSubStep } = useStructure();
@@ -32,7 +34,6 @@ export function RenderingStep() {
     [data.templateGroups],
   );
 
-  // For renderings, only the primary member per group (standalone or parent)
   const renderableMembers = useMemo(
     () =>
       groups.flatMap((group) => {
@@ -87,7 +88,6 @@ export function RenderingStep() {
 
       const resolvedName = preflightNames?.[comp.componentName] ?? comp.componentName;
 
-      // Find the matching template result for this group's primary member
       const templateResult = template.results.find(
         (t) => t.groupId === group.id && (t.role === "standalone" || t.role === "parent"),
       );
@@ -106,7 +106,7 @@ export function RenderingStep() {
         templateId: JSON_RENDERING_TEMPLATE_ID,
         parentId,
         parentPath: selectedTreeItem?.path ?? "",
-        language: "en",
+        language: DEFAULT_LANGUAGE,
         fields: [
           { name: "ComponentName", value: comp.componentName },
           { name: "Datasource Template", value: templateResult?.path ?? "" },
@@ -152,10 +152,7 @@ export function RenderingStep() {
       results: partial,
     });
 
-    if (!hasErrors) {
-      advanceSubStep();
-    }
-
+    if (!hasErrors) advanceSubStep();
     setRunning(false);
   }, [
     parentId,
@@ -189,14 +186,8 @@ export function RenderingStep() {
         required
         value={parentId}
         selectedItem={selectedTreeItem}
-        onChange={(id) => {
-          setParentId(id);
-          setSelectedTreeItem(null);
-        }}
-        onSelect={(item) => {
-          setParentId(item.itemId);
-          setSelectedTreeItem(item);
-        }}
+        onChange={(id) => { setParentId(id); setSelectedTreeItem(null); }}
+        onSelect={(item) => { setParentId(item.itemId); setSelectedTreeItem(item); }}
       />
 
       <NameConflictAlert items={renamedItems} />
@@ -209,12 +200,7 @@ export function RenderingStep() {
         </Alert>
       )}
 
-      {globalError && (
-        <Alert variant="danger">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{globalError}</AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={globalError} />
 
       <StepResultsCard results={results} />
 
@@ -223,4 +209,4 @@ export function RenderingStep() {
       </Button>
     </div>
   );
-}
+};

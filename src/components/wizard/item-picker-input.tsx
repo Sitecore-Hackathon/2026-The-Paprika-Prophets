@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SiteTree, type SelectedTreeItem } from "@/components/wizard/site-tree";
-import { Icon } from "@/lib/icon";
+import { Icon } from "@/components/ui/icon";
 import { mdiDotsHorizontal } from "@mdi/js";
 
 const GUID_BARE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

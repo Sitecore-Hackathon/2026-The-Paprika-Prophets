@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppContext } from "@/components/providers/marketplace";
+import { useAppContext } from "@/components/providers/marketplace-provider";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

@@ -15,16 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { AnalysisLoader } from "../analysis-loader";
 import type {
   ComponentField,
   AnalyzedComponent,
   TemplateGroup,
+  TemplateMemberRole,
   DesignHints,
 } from "@/lib/types/component";
 import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
@@ -42,15 +38,6 @@ function dataUrlToBlob(dataUrl: string): Blob {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return new Blob([bytes], { type: mime });
 }
-
-/* ── Types ────────────────────────────────────────────────────────── */
-
-// Types imported from @/lib/types/component
-
-
-
-/** A group of related templates: parent list + child + folder, or standalone */
-// TemplateGroup is imported from @/lib/types/component
 
 /* ── Constants ────────────────────────────────────────────────────── */
 
@@ -152,15 +139,29 @@ function emptyField(): ComponentField {
 
 /* ── Grouping logic ───────────────────────────────────────────────── */
 
+function findFolder(
+  components: AnalyzedComponent[],
+  claimed: Set<number>,
+  ownerName: string,
+): number {
+  return components.findIndex(
+    (c, i) =>
+      !claimed.has(i) &&
+      c.isDatasourceFolder &&
+      (c.parentTemplateName === ownerName || c.componentName.includes(ownerName)),
+  );
+}
+
 function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
   const groups: TemplateGroup[] = [];
   const claimed = new Set<number>();
 
-  // First pass: list parents and their children + folders
+  // First pass: list parents — claim parent, child, and both folders
   components.forEach((comp, idx) => {
     if (comp.isListComponent && !claimed.has(idx)) {
+      // Use the stable array index as the group id so renames don't affect expansion state.
       const group: TemplateGroup = {
-        id: comp.componentName,
+        id: String(idx),
         label: comp.componentName,
         type: "list",
         members: [{ role: "parent", idx }],
@@ -174,26 +175,25 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
           !claimed.has(i) &&
           !c.isListComponent &&
           !c.isDatasourceFolder &&
-          (c.parentTemplateName === comp.componentName || comp.childTemplateName === c.componentName)
+          (c.parentTemplateName === comp.componentName || comp.childTemplateName === c.componentName),
       );
       if (childIdx !== -1) {
         group.members.push({ role: "child", idx: childIdx });
         claimed.add(childIdx);
+
+        // Silently claim child's folder — prevents it becoming a standalone group.
+        // Child items live inside the parent datasource, no separate child folder needed.
+        const childFolderIdx = findFolder(components, claimed, components[childIdx].componentName);
+        if (childFolderIdx !== -1) claimed.add(childFolderIdx);
       }
 
-      // Find folder
-      const folderIdx = components.findIndex(
-        (c, i) =>
-          !claimed.has(i) &&
-          c.isDatasourceFolder &&
-          (c.parentTemplateName === comp.componentName || c.componentName.includes("Folder"))
-      );
+      // Find parent's folder
+      const folderIdx = findFolder(components, claimed, comp.componentName);
       if (folderIdx !== -1) {
         group.members.push({ role: "folder", idx: folderIdx });
         claimed.add(folderIdx);
       }
 
-      // Insert options — reusable items pattern
       const folderName = folderIdx !== -1 ? components[folderIdx].componentName : null;
       const childName = childIdx !== -1 ? components[childIdx].componentName : comp.childTemplateName;
       const parentFolderName = comp.componentName + "sFolder";
@@ -209,7 +209,7 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
   components.forEach((comp, idx) => {
     if (!claimed.has(idx) && !comp.isDatasourceFolder) {
       const group: TemplateGroup = {
-        id: comp.componentName,
+        id: String(idx),
         label: comp.componentName,
         type: "standalone",
         members: [{ role: "standalone", idx }],
@@ -217,18 +217,12 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
       };
       claimed.add(idx);
 
-      // Find an associated data folder for this standalone component
-      const folderIdx = components.findIndex(
-        (c, i) =>
-          !claimed.has(i) &&
-          c.isDatasourceFolder &&
-          (c.parentTemplateName === comp.componentName || c.componentName.includes(comp.componentName))
-      );
+      const folderIdx = findFolder(components, claimed, comp.componentName);
       if (folderIdx !== -1) {
         group.members.push({ role: "folder", idx: folderIdx });
         claimed.add(folderIdx);
         group.insertOptions.push(
-          `${comp.componentName} → datasource stored in ${components[folderIdx].componentName}`
+          `${comp.componentName} → datasource stored in ${components[folderIdx].componentName}`,
         );
       }
 
@@ -240,7 +234,7 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
   components.forEach((comp, idx) => {
     if (!claimed.has(idx)) {
       groups.push({
-        id: comp.componentName,
+        id: String(idx),
         label: comp.componentName,
         type: "standalone",
         members: [{ role: "folder", idx }],
@@ -253,9 +247,7 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
   return groups;
 }
 
-/* ── Small UI helpers ─────────────────────────────────────────────── */
-
-function RoleBadge({ role }: { role: string }) {
+function RoleBadge({ role }: { role: TemplateMemberRole }) {
   const config: Record<string, { label: string; colorScheme: string }> = {
     parent: { label: "Parent", colorScheme: "primary" },
     child: { label: "Child", colorScheme: "success" },
@@ -266,12 +258,12 @@ function RoleBadge({ role }: { role: string }) {
   return <Badge colorScheme={c.colorScheme as "primary" | "success" | "warning" | "neutral"} size="sm">{c.label}</Badge>;
 }
 
-function RoleLabel({ role }: { role: string }) {
+function RoleLabel({ role }: { role: TemplateMemberRole }) {
   const labels: Record<string, string> = { parent: "Parent:", child: "Child:", folder: "Folder:", standalone: "Template:" };
   return <span className="text-muted-foreground">{labels[role] ?? role}</span>;
 }
 
-const ROLE_DOT_COLORS: Record<string, string> = {
+const ROLE_DOT_COLORS: Record<TemplateMemberRole, string> = {
   parent: "bg-blue-500",
   child: "bg-green-500",
   folder: "bg-amber-500",
@@ -724,24 +716,6 @@ export function AnalysisResults() {
           </Button>
         </CardContent>
       </Card>
-
-      {/* ═══ Debug: Raw JSON ═══ */}
-      {process.env.NODE_ENV === "development" && (
-        <Collapsible>
-          <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
-            ▶ Debug: Raw JSON
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4">
-                <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs font-mono max-h-96">
-                  {JSON.stringify({ groups: templateGroups, components }, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
 
       {/* ═══ Navigation ═══ */}
       <div className="flex justify-between">
