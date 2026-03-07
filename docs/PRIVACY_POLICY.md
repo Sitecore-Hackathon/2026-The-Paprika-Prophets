@@ -5,7 +5,7 @@
 
 ## 1. Overview
 
-Component Forge is a Sitecore Marketplace application that analyses screenshots and HTML markup using OpenAI's GPT-4o API to propose Sitecore XM Cloud component template structures. This policy describes data handling within the application.
+Component Forge is a Sitecore Marketplace application that analyses screenshots and HTML markup using OpenAI's GPT-4o API to propose SitecoreAI component template structures. This policy describes data handling within the application.
 
 ## 2. Data We Process
 
@@ -14,7 +14,7 @@ Component Forge is a Sitecore Marketplace application that analyses screenshots 
 | **Screenshots** | User upload / clipboard paste | Sent to OpenAI for component analysis | In-memory only; not persisted after response |
 | **HTML Markup** | User-provided text | Sent to OpenAI for component analysis | In-memory only; not persisted after response |
 | **OpenAI API Key** | Stored in Sitecore Settings item | Authenticating to OpenAI API | Stored in Sitecore content tree; encrypted at rest by Sitecore |
-| **Tenant Context** | Sitecore Marketplace SDK | Identifying the target XM Cloud instance | Session-scoped; not stored |
+| **Tenant Context** | Sitecore Marketplace SDK | Identifying the target SitecoreAI instance | Session-scoped; not stored |
 
 ## 3. Third-Party Data Sharing
 

@@ -15,7 +15,7 @@ import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
 
-// Standard XM Cloud / JSS JSON rendering template
+// StandardAI / JSS JSON rendering template
 const JSON_RENDERING_TEMPLATE_ID = "{04646A89-996F-4EE7-878A-FFDBF1F0EF0D}";
 
 export function RenderingStep() {

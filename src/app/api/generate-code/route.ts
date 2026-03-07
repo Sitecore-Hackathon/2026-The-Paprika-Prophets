@@ -5,7 +5,7 @@ import { sanitizeForPrompt } from "@/lib/validation";
 
 /* ── System prompt for code generation ─────────────────────────── */
 
-const SYSTEM_PROMPT = `You are a Sitecore XM Cloud / Content SDK expert.
+const SYSTEM_PROMPT = `You are a SitecoreAI (formerly: XM Cloud) / Content SDK expert.
 You generate production-ready Next.js component code that follows the @sitecore-content-sdk/nextjs patterns exactly.
 
 ═══ IMPORTS ═══════════════════════════════════════════════

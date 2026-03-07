@@ -150,7 +150,7 @@ const FINAL_CHECKLIST = `□ Every visible text element maps to a field
 
 /* ── Assembled prompts ─────────────────────────────────────────── */
 
-export const SCREENSHOT_ANALYSIS_PROMPT = `You are a Sitecore XM Cloud expert analyzing a screenshot to identify components and propose template structures.
+export const SCREENSHOT_ANALYSIS_PROMPT = `You are a SitecoreAI (formerly: XM Cloud) expert analyzing a screenshot to identify components and propose template structures.
 
 TASK: Analyze the provided screenshot and identify ALL distinct UI components visible.
 
@@ -195,7 +195,7 @@ FINAL CHECKLIST before returning:
 ${FINAL_CHECKLIST}`;
 
 
-export const HTML_ANALYSIS_PROMPT = `You are a Sitecore XM Cloud expert analyzing HTML markup to propose Sitecore template structures.
+export const HTML_ANALYSIS_PROMPT = `You are a SitecoreAI (formerly: XM Cloud) expert analyzing HTML markup to propose Sitecore template structures.
 
 TASK: Analyze the provided HTML and identify ALL distinct UI components.
 
