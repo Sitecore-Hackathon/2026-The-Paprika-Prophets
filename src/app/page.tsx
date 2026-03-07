@@ -2,6 +2,7 @@
 
 import { WizardProvider } from "@/components/wizard/wizard-context";
 import { WizardShell } from "@/components/wizard/wizard-shell";
+import { RunLogProvider } from "@/components/providers/run-log-provider";
 import { TenantSelector } from "@/components/wizard/steps/tenant-selector";
 import { InstallationWizard } from "@/components/wizard/steps/installation-wizard";
 import { ComponentInput } from "@/components/wizard/steps/component-input";
@@ -12,14 +13,16 @@ import { CodeGeneration } from "@/components/wizard/steps/code-generation";
 export default function Home() {
   return (
     <WizardProvider>
-      <WizardShell>
-        <TenantSelector />
-        <InstallationWizard />
-        <ComponentInput />
-        <AnalysisResults />
-        <CreateSitecoreStructure />
-        <CodeGeneration />
-      </WizardShell>
+      <RunLogProvider>
+        <WizardShell>
+          <TenantSelector />
+          <InstallationWizard />
+          <ComponentInput />
+          <AnalysisResults />
+          <CreateSitecoreStructure />
+          <CodeGeneration />
+        </WizardShell>
+      </RunLogProvider>
     </WizardProvider>
   );
 }

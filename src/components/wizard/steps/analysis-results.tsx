@@ -29,6 +29,8 @@ import type {
   TemplateGroup,
 } from "@/lib/types/component";
 import { REFERENCE_FIELD_TYPES } from "@/lib/types/component";
+import { useRunLog } from "@/components/providers/run-log-provider";
+import type { AiCallMetadata } from "@/lib/services/logging-service";
 
 /* ── Utilities ─────────────────────────────────────────────────────── */
 
@@ -283,6 +285,7 @@ const ROLE_DOT_COLORS: Record<string, string> = {
 export function AnalysisResults() {
   const { goBack, goNext, data, setStepData } = useWizard();
   const { selectedTenant } = useTenantContext();
+  const { recordStep } = useRunLog();
 
   const analysisRaw = data.analysisResult as Record<string, unknown> | undefined;
   const sourceType = (data.sourceType as string) ?? "unknown";
@@ -439,7 +442,7 @@ export function AnalysisResults() {
     setReanalyzeError(null);
 
     try {
-      let json: { success: boolean; analysis: Record<string, unknown>; error?: string };
+      let json: { success: boolean; analysis: Record<string, unknown>; error?: string; metadata?: AiCallMetadata };
 
       if (sourceType === "screenshot" && screenshotPreview) {
         const blob = dataUrlToBlob(screenshotPreview);
@@ -475,6 +478,8 @@ export function AnalysisResults() {
         if (!response.ok) throw new Error(json.error || "Re-analysis failed");
       }
 
+      if (json.metadata) recordStep(json.metadata);
+
       setStepData("analysisResult", json.analysis);
       setComponents(normalizeComponents(json.analysis));
       setSelectedPresets(new Set());
@@ -485,7 +490,7 @@ export function AnalysisResults() {
       setReanalyzing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceType, screenshotPreview, analysisRaw, data.htmlContent, openAiApiKey, selectedTenant, setStepData, selectedPresets, feedbackText]);
+  }, [sourceType, screenshotPreview, analysisRaw, data.htmlContent, openAiApiKey, selectedTenant, setStepData, selectedPresets, feedbackText, recordStep]);
 
   /* ── No data guard ─────────────────────────────────────────── */
 

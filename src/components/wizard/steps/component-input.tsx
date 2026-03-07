@@ -15,10 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnalysisLoader } from "../analysis-loader";
+import { useRunLog } from "@/components/providers/run-log-provider";
 
 export function ComponentInput() {
   const { goNext, goBack, data, setStepData } = useWizard();
   const { selectedTenant } = useTenantContext();
+  const { startRun, recordStep } = useRunLog();
 
   const [selectedOption, setSelectedOption] = useState<
     "screenshot" | "html" | null
@@ -76,6 +78,7 @@ export function ComponentInput() {
     if (!imageFile) return;
     setLoading(true);
     setError(null);
+    startRun("screenshot");
 
     try {
       const formData = new FormData();
@@ -94,6 +97,8 @@ export function ComponentInput() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Analysis failed");
 
+      if (json.metadata) recordStep(json.metadata);
+
       setStepData("analysisResult", json.analysis);
       setStepData("analysisRaw", json.raw);
       setStepData("sourceType", "screenshot");
@@ -111,12 +116,15 @@ export function ComponentInput() {
     selectedTenant,
     setStepData,
     goNext,
+    startRun,
+    recordStep,
   ]);
 
   const handleHtmlAnalysis = useCallback(async () => {
     if (!htmlContent.trim()) return;
     setLoading(true);
     setError(null);
+    startRun("html");
 
     try {
       const response = await fetch("/api/analyze-html", {
@@ -133,6 +141,8 @@ export function ComponentInput() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Analysis failed");
 
+      if (json.metadata) recordStep(json.metadata);
+
       setStepData("analysisResult", json.analysis);
       setStepData("analysisRaw", json.raw);
       setStepData("sourceType", "html");
@@ -143,7 +153,7 @@ export function ComponentInput() {
     } finally {
       setLoading(false);
     }
-  }, [htmlContent, openAiApiKey, selectedTenant, setStepData, goNext]);
+  }, [htmlContent, openAiApiKey, selectedTenant, setStepData, goNext, startRun, recordStep]);
 
   return (
     <div className="space-y-6 pt-8">
