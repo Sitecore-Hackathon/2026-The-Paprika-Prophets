@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call OpenAI Vision API
+    const t0 = Date.now();
     const response = await openai.chat.completions.create({
       model,
       messages: [
@@ -84,14 +85,25 @@ export async function POST(request: NextRequest) {
       max_completion_tokens: 8000,
       response_format: { type: "json_object" },
     });
+    const durationMs = Date.now() - t0;
 
     const result = response.choices[0].message.content;
     const parsed = JSON.parse(result || "{}");
+    const usage = response.usage;
 
     return NextResponse.json({
       success: true,
       analysis: parsed,
       raw: result,
+      metadata: {
+        stepName: feedback ? "reanalyze-screenshot" : "analyze-screenshot",
+        model,
+        promptTokens: usage?.prompt_tokens ?? 0,
+        completionTokens: usage?.completion_tokens ?? 0,
+        totalTokens: usage?.total_tokens ?? 0,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      },
     });
   } catch (error: unknown) {
     const message =
