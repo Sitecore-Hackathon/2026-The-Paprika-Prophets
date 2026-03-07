@@ -8,6 +8,7 @@ import { InstallationWizard } from "@/components/wizard/steps/installation-wizar
 import { ComponentInput } from "@/components/wizard/steps/component-input";
 import { AnalysisResults } from "@/components/wizard/steps/analysis-results";
 import { CreateSitecoreStructure } from "@/components/wizard/steps/create-structure";
+import { CodeGeneration } from "@/components/wizard/steps/code-generation";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <ComponentInput />
         <AnalysisResults />
         <CreateSitecoreStructure />
+        <CodeGeneration />
       </WizardShell>
 
       {/* Quick link to Code Generation POC */}

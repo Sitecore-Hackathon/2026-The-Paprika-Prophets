@@ -40,6 +40,7 @@ const STEPS: WizardStep[] = [
   { id: "component-input", label: "Component Input" },
   { id: "analysis-results", label: "Results" },
   { id: "create-structure", label: "Create Structure" },
+  { id: "code-generation", label: "Code Generation" },
 ];
 
 export function WizardProvider({

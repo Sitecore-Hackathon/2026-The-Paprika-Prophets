@@ -240,14 +240,45 @@ function buildGroups(components: AnalyzedComponent[]): TemplateGroup[] {
     }
   });
 
-  // Second pass: standalones
+  // Second pass: standalones (may include a data folder)
+  components.forEach((comp, idx) => {
+    if (!claimed.has(idx) && !comp.isDatasourceFolder) {
+      const group: TemplateGroup = {
+        id: comp.componentName,
+        label: comp.componentName,
+        type: "standalone",
+        members: [{ role: "standalone", idx }],
+        insertOptions: [],
+      };
+      claimed.add(idx);
+
+      // Find an associated data folder for this standalone component
+      const folderIdx = components.findIndex(
+        (c, i) =>
+          !claimed.has(i) &&
+          c.isDatasourceFolder &&
+          (c.parentTemplateName === comp.componentName || c.componentName.includes(comp.componentName))
+      );
+      if (folderIdx !== -1) {
+        group.members.push({ role: "folder", idx: folderIdx });
+        claimed.add(folderIdx);
+        group.insertOptions.push(
+          `${comp.componentName} → datasource stored in ${components[folderIdx].componentName}`
+        );
+      }
+
+      groups.push(group);
+    }
+  });
+
+  // Third pass: any unclaimed folders (orphans)
   components.forEach((comp, idx) => {
     if (!claimed.has(idx)) {
       groups.push({
         id: comp.componentName,
         label: comp.componentName,
         type: "standalone",
-        members: [{ role: "standalone", idx }],
+        members: [{ role: "folder", idx }],
         insertOptions: [],
       });
       claimed.add(idx);
@@ -285,7 +316,7 @@ const ROLE_DOT_COLORS: Record<string, string> = {
 /* ── Main Export ──────────────────────────────────────────────────── */
 
 export function AnalysisResults() {
-  const { goBack, data, setStepData } = useWizard();
+  const { goBack, goNext, data, setStepData } = useWizard();
   const { selectedTenant } = useTenantContext();
 
   const analysisRaw = data.analysisResult as Record<string, unknown> | undefined;
@@ -353,6 +384,62 @@ export function AnalysisResults() {
     setComponents((prev) => {
       const next = [...prev];
       next[compIdx] = { ...next[compIdx], componentName: name };
+      return next;
+    });
+  };
+
+  /* ── Variant CRUD ──────────────────────────────────────────── */
+
+  const updateVariant = (compIdx: number, varIdx: number, key: keyof VariantDef, value: string) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      const variants = [...next[compIdx].variants];
+      variants[varIdx] = { ...variants[varIdx], [key]: value };
+      next[compIdx] = { ...next[compIdx], variants };
+      return next;
+    });
+  };
+
+  const removeVariant = (compIdx: number, varIdx: number) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      next[compIdx] = { ...next[compIdx], variants: next[compIdx].variants.filter((_, i) => i !== varIdx) };
+      return next;
+    });
+  };
+
+  const addVariant = (compIdx: number) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      next[compIdx] = { ...next[compIdx], variants: [...next[compIdx].variants, { name: "", description: "" }] };
+      return next;
+    });
+  };
+
+  /* ── SXA Style CRUD ────────────────────────────────────────── */
+
+  const updateStyle = (compIdx: number, styleIdx: number, key: keyof SxaStyleDef, value: string | string[]) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      const sxaStyles = [...next[compIdx].sxaStyles];
+      sxaStyles[styleIdx] = { ...sxaStyles[styleIdx], [key]: value };
+      next[compIdx] = { ...next[compIdx], sxaStyles };
+      return next;
+    });
+  };
+
+  const removeStyle = (compIdx: number, styleIdx: number) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      next[compIdx] = { ...next[compIdx], sxaStyles: next[compIdx].sxaStyles.filter((_, i) => i !== styleIdx) };
+      return next;
+    });
+  };
+
+  const addStyle = (compIdx: number) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      next[compIdx] = { ...next[compIdx], sxaStyles: [...next[compIdx].sxaStyles, { name: "", options: [], description: "" }] };
       return next;
     });
   };
@@ -456,7 +543,7 @@ export function AnalysisResults() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold">Template Overview</CardTitle>
+              <CardTitle className="text-2xl font-bold">Components Overview</CardTitle>
               <CardDescription>
                 {totalTemplates} template{totalTemplates !== 1 ? "s" : ""} detected ({totalFields} fields total) — review and edit before creating
               </CardDescription>
@@ -686,23 +773,96 @@ export function AnalysisResults() {
                       <Button size="sm" variant="outline" onClick={() => addField(compIdx)}>+ Add Field</Button>
                     </div>
 
-                    {/* Variants & Styles */}
-                    {(comp.variants.length > 0 || comp.sxaStyles.length > 0) && (
-                      <div className="flex gap-4 mt-3 flex-wrap">
-                        {comp.variants.length > 0 && (
-                          <div className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Badge colorScheme="primary" size="sm">{comp.variants.length} variant{comp.variants.length > 1 ? "s" : ""}</Badge>
-                            <span>{comp.variants.map((v) => v.name).join(", ")}</span>
-                          </div>
-                        )}
-                        {comp.sxaStyles.length > 0 && (
-                          <div className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Badge colorScheme="warning" size="sm">{comp.sxaStyles.length} style{comp.sxaStyles.length > 1 ? "s" : ""}</Badge>
-                            <span>{comp.sxaStyles.map((s) => s.name).join(", ")}</span>
-                          </div>
-                        )}
+                    {/* Variants */}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                          Variants
+                          <Badge colorScheme="primary" size="sm">{comp.variants.length}</Badge>
+                        </h4>
+                        <Button size="sm" variant="outline" onClick={() => addVariant(compIdx)}>+ Add Variant</Button>
                       </div>
-                    )}
+                      {comp.variants.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-muted">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-semibold">Name</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold">Description</th>
+                                <th className="px-3 py-2 w-8" />
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {comp.variants.map((v, vIdx) => (
+                                <tr key={vIdx} className="hover:bg-muted/30">
+                                  <td className="px-3 py-2">
+                                    <Input value={v.name} onChange={(e) => updateVariant(compIdx, vIdx, "name", e.target.value)} className="h-8 text-sm font-mono" />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input value={v.description} onChange={(e) => updateVariant(compIdx, vIdx, "description", e.target.value)} className="h-8 text-sm" />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeVariant(compIdx, vIdx)}>×</Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic bg-muted/30 rounded-lg p-3">No variants defined.</div>
+                      )}
+                    </div>
+
+                    {/* SXA Styles */}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                          SXA Styles
+                          <Badge colorScheme="warning" size="sm">{comp.sxaStyles.length}</Badge>
+                        </h4>
+                        <Button size="sm" variant="outline" onClick={() => addStyle(compIdx)}>+ Add Style</Button>
+                      </div>
+                      {comp.sxaStyles.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-muted">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-semibold">Name</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold">Options (comma-separated)</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold">Description</th>
+                                <th className="px-3 py-2 w-8" />
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {comp.sxaStyles.map((s, sIdx) => (
+                                <tr key={sIdx} className="hover:bg-muted/30">
+                                  <td className="px-3 py-2">
+                                    <Input value={s.name} onChange={(e) => updateStyle(compIdx, sIdx, "name", e.target.value)} className="h-8 text-sm font-mono" />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      value={s.options.join(", ")}
+                                      onChange={(e) => updateStyle(compIdx, sIdx, "options", e.target.value.split(",").map((o) => o.trim()).filter(Boolean))}
+                                      placeholder="Option1, Option2, …"
+                                      className="h-8 text-sm"
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input value={s.description} onChange={(e) => updateStyle(compIdx, sIdx, "description", e.target.value)} className="h-8 text-sm" />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeStyle(compIdx, sIdx)}>×</Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic bg-muted/30 rounded-lg p-3">No SXA styles defined.</div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -769,7 +929,7 @@ export function AnalysisResults() {
       {/* ═══ Navigation ═══ */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={goBack}>Back</Button>
-        <Button onClick={() => { setStepData("editedComponents", components); }}>
+        <Button onClick={() => { setStepData("editedComponents", components); setStepData("templateGroups", templateGroups); goNext(); }}>
           Save &amp; Continue
         </Button>
       </div>

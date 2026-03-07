@@ -2,79 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { rateLimit } from "@/lib/rate-limit";
 import { validateHtmlInput, sanitizeForPrompt } from "@/lib/validation";
-
-const ANALYSIS_PROMPT = `You are a Sitecore XM Cloud expert analyzing HTML markup to propose Sitecore template structures.
-
-═══ STEP 1 — IDENTIFY COMPONENTS ════════════════════════════
-Examine the HTML structure and identify every distinct component block.
-A single HTML snippet may describe ONE standalone component OR a LIST (repeater) with parent + child.
-
-═══ STEP 2 — LIST vs STANDALONE ═════════════════════════════
-CRITICAL DISTINCTION:
-• A LIST/REPEATER has 2+ visually similar items sharing the same structure (e.g. <ul> with repeated <li>, a grid of cards).
-  → Always produce THREE templates: Parent (container), Child (single item), Folder (shared data folder).
-• A STANDALONE component has unique, non-repeating content.
-  → Produce ONE template.
-
-For LIST COMPONENTS (reusable-item pattern):
-- PARENT template: isListComponent=true, holds section-level fields (heading, description, "View All" link, etc.)
-  IMPORTANT: The parent MUST include an "Items" field of type Treelist (or Multilist) that references child items.
-  This allows the same child items to be reused across different list components.
-  Set childTemplateName to the child template name.
-- CHILD template: holds fields for ONE repeated item. Set parentTemplateName to the parent name.
-  The child is stored in a shared data folder and referenced via the parent's Items field.
-- FOLDER template: isDatasourceFolder=true, no data fields — a shared container for child items.
-  Set parentTemplateName referencing the list parent.
-  Insert options on this folder allow creating child items inside it.
-
-For STANDALONE COMPONENTS:
-- isListComponent=false, childTemplateName=null, isDatasourceFolder=false, parentTemplateName=null
-
-═══ STEP 3 — EXTRACT FIELDS ═════════════════════════════════
-For each template, identify fields from the HTML content:
-• Text content → Single-Line Text or Multi-Line Text or Rich Text
-• <img> → Image field
-• <a href> → General Link field
-• Dates → Date field
-• Boolean toggles → Checkbox field
-• Repeated reference items → Treelist or Multilist field
-
-═══ STEP 4 — RETURN JSON ════════════════════════════════════
-Return a JSON object with key "components" — an array:
-{
-  "components": [
-    {
-      "componentName": "PascalCaseName",
-      "description": "Brief description",
-      "visualLocation": "Where it appears (e.g. header, main content area, sidebar, footer)",
-      "isListComponent": true|false,
-      "childTemplateName": "ChildName" | null,
-      "isDatasourceFolder": true|false,
-      "parentTemplateName": "ParentName" | null,
-      "fields": [
-        {
-          "name": "PascalCaseFieldName",
-          "displayName": "Human Readable Name",
-          "type": "Single-Line Text|Multi-Line Text|Rich Text|Image|General Link|Date|Checkbox|Treelist|Multilist|etc",
-          "description": "Purpose of this field",
-          "required": true|false
-        }
-      ],
-      "variants": [{"name":"Default","description":"Standard layout"}],
-      "sxaStyles": [],
-      "suggestions": "Any additional notes"
-    }
-  ]
-}
-
-═══ FINAL CHECKLIST ══════════════════════════════════════════
-□ Section headings are on the PARENT, not the child
-□ List parents have an "Items" field of type Treelist or Multilist referencing child items
-□ List components have exactly 3 entries (parent + child + folder)
-□ Standalone components are NOT marked as lists
-□ Every field has a clear Sitecore type
-
-Be specific and thorough in your analysis.`;
+import { HTML_ANALYSIS_PROMPT } from "@/lib/analysis-prompt";
 
 export async function POST(request: NextRequest) {
   /* ── Rate limiting ───────────────────────────────────────── */
@@ -121,9 +49,9 @@ export async function POST(request: NextRequest) {
     const sanitizedHtml = sanitizeForPrompt(html);
 
     // Build prompt — append feedback context when reanalyzing
-    let prompt = `${ANALYSIS_PROMPT}\n\nHTML to analyze:\n\`\`\`html\n${sanitizedHtml}\n\`\`\``;
+    let prompt = `${HTML_ANALYSIS_PROMPT}\n\nHTML to analyze:\n\`\`\`html\n${sanitizedHtml}\n\`\`\``;
     if (feedback) {
-      prompt += `\n\nREANALYSIS INSTRUCTIONS:\nThe user reviewed a previous analysis and has the following feedback.\nAdjust your analysis accordingly.\n\nPrevious result:\n${JSON.stringify(previousResult)}\n\nUser feedback:\n${sanitizeForPrompt(String(feedback))}`;
+      prompt += `\n\n═══════════════════════════════════════════════\nREANALYSIS INSTRUCTIONS\n═══════════════════════════════════════════════\nThe user reviewed a previous analysis and has the following feedback.\nAdjust your analysis accordingly while still following all rules above.\n\nPrevious result:\n${JSON.stringify(previousResult)}\n\nUser feedback:\n${sanitizeForPrompt(String(feedback))}`;
     }
 
     // Call OpenAI API
