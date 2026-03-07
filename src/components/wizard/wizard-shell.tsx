@@ -1,7 +1,7 @@
 "use client";
 
 import { useWizard } from "./wizard-context";
-import { TenantHeader } from "./tenant-header";
+import { TenantSiteHeader } from "./tenant-site-header";
 import { useTenantContext } from "@/components/providers/tenant-provider";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
@@ -69,7 +69,7 @@ export function WizardShell({ children }: { children: React.ReactNode[] }) {
         </div>
       </nav>
 
-      <TenantHeader />
+      <TenantSiteHeader />
 
       <main className="flex-1 flex flex-col container mx-auto px-6 py-8 max-w-4xl">
         {children[currentStepIndex]}

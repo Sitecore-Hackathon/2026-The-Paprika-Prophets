@@ -34,7 +34,7 @@ export const buildGetItemWithFieldsQuery = (
       itemId
       name
       path
-      fields(ownFields: true, excludeStandardFields: true) {
+      fields(excludeStandardFields: true) {
         nodes {
           name
           value

@@ -2,7 +2,6 @@
 
 import { useAppContext } from "@/components/providers/marketplace";
 import { useTenantContext } from "@/components/providers/tenant-provider";
-import { useWizard } from "../wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -11,10 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { SiteSelector } from "./site-selector";
 
 export function TenantSelector() {
-  const { goNext } = useWizard();
   const appContext = useAppContext();
   const { selectedTenant, setSelectedTenant } = useTenantContext();
 
@@ -32,7 +30,7 @@ export function TenantSelector() {
           Select Tenant
         </h1>
         <p className="text-muted-foreground mt-1">
-          Choose the tenant you want to work with.
+          Choose the tenant and site you want to work with.
         </p>
       </div>
 
@@ -56,16 +54,11 @@ export function TenantSelector() {
               ))}
             </SelectContent>
           </Select>
-
-          <Button
-            onClick={goNext}
-            disabled={!selectedTenant}
-            className="w-full"
-          >
-            Continue
-          </Button>
         </CardContent>
       </Card>
+
+      {/* Site selector appears once a tenant is chosen */}
+      <SiteSelector />
     </div>
   );
 }
