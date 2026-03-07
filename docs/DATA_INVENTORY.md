@@ -42,7 +42,7 @@ User (Sitecore iframe)
 | 1 | Screenshot image | User Content | User upload/paste | OpenAI API | None (in-memory) | Request lifecycle | TLS in transit |
 | 2 | HTML markup | User Content | User input | OpenAI API | None (in-memory) | Request lifecycle | TLS in transit |
 | 3 | OpenAI API key | Secret/Credential | User entry | Sitecore DB, OpenAI API | Sitecore content tree | Until user removes | Sitecore DB encryption + TLS |
-| 4 | LLM model preference | Configuration | User selection | Sitecore DB | Sitecore content tree | Until user removes | Sitecore DB encryption |
+| 4 | LLM model preferences (Analysis + Coding) | Configuration | User selection | Sitecore DB | Sitecore content tree | Until user removes | Sitecore DB encryption |
 | 5 | Tenant ID / Context ID | Session Context | Marketplace SDK | Next.js app | Browser memory | Session only | N/A |
 | 6 | Analysis results (JSON) | Generated Content | OpenAI API response | Browser display | None (in-memory) | Page session | TLS in transit |
 | 7 | Caller IP (rate limiting) | Operational | Request headers | In-memory rate limiter | Node.js memory | 60-second sliding window | N/A |

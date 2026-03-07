@@ -83,9 +83,17 @@ export function InstallationWizard() {
         setOpenAiKeySet(hasKey);
         if (hasKey) {
           setStepData("openAiApiKey", apiKeyField!.value);
-          const modelField = fields.find((f) => f.name === "LLM Model");
-          if (modelField?.value) {
-            setStepData("llmModel", modelField.value);
+          const analysisModelField = fields.find(
+            (f) => f.name === "Analysis LLM Model",
+          );
+          const codingModelField = fields.find(
+            (f) => f.name === "Coding LLM Model",
+          );
+          if (analysisModelField?.value) {
+            setStepData("analysisLlmModel", analysisModelField.value);
+          }
+          if (codingModelField?.value) {
+            setStepData("codingLlmModel", codingModelField.value);
           }
         }
       }
@@ -123,11 +131,13 @@ export function InstallationWizard() {
 
   const handleSettingsSaved = (fields: {
     openAiApiKey: string;
-    llmModel: string;
+    analysisLlmModel: string;
+    codingLlmModel: string;
   }) => {
     setOpenAiKeySet(!!fields.openAiApiKey.trim());
     setStepData("openAiApiKey", fields.openAiApiKey);
-    setStepData("llmModel", fields.llmModel);
+    setStepData("analysisLlmModel", fields.analysisLlmModel);
+    setStepData("codingLlmModel", fields.codingLlmModel);
   };
 
   const isInstalled = status?.state === "installed";

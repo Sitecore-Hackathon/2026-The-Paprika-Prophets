@@ -22,7 +22,9 @@ export const COMPONENT_FORGE_SETTINGS_TEMPLATE: TemplateConfig = {
       name: "Settings",
       fields: [
         { name: "OpenAI API Key", type: "Single-Line Text" },
-        { name: "LLM Model", type: "Single-Line Text" },
+        { name: "Analysis LLM Model", type: "Single-Line Text" },
+        { name: "Coding LLM Model", type: "Single-Line Text" },
+        { name: "Module Version", type: "Single-Line Text" },
       ],
     },
   ],

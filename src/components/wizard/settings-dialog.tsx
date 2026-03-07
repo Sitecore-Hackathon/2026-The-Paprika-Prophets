@@ -12,6 +12,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { AuthoringService } from "@/lib/services/authoring-service";
 import { SITECORE_PATHS } from "@/lib/installation/constants";
@@ -20,11 +30,102 @@ interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   authoringService: AuthoringService;
-  onSaved?: (fields: { openAiApiKey: string; llmModel: string }) => void;
+  onSaved?: (fields: {
+    openAiApiKey: string;
+    analysisLlmModel: string;
+    codingLlmModel: string;
+  }) => void;
 }
 
 const SETTINGS_PATH =
   SITECORE_PATHS.SYSTEM.MODULES + "/Component Forge/Settings";
+
+function AnalysisModelSelectContent() {
+  return (
+    <>
+      <SelectGroup>
+        <SelectLabel>GPT-5 Series</SelectLabel>
+        <SelectItem value="gpt-5.4">GPT-5.4</SelectItem>
+        <SelectItem value="gpt-5.4-pro">GPT-5.4 Pro</SelectItem>
+        <SelectItem value="gpt-5.2">GPT-5.2</SelectItem>
+        <SelectItem value="gpt-5.2-pro">GPT-5.2 Pro</SelectItem>
+        <SelectItem value="gpt-5.1">GPT-5.1</SelectItem>
+        <SelectItem value="gpt-5">GPT-5</SelectItem>
+        <SelectItem value="gpt-5-pro">GPT-5 Pro</SelectItem>
+        <SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
+        <SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
+      </SelectGroup>
+      <SelectSeparator />
+      <SelectGroup>
+        <SelectLabel>Reasoning</SelectLabel>
+        <SelectItem value="o3-pro">o3-pro</SelectItem>
+        <SelectItem value="o3">o3</SelectItem>
+        <SelectItem value="o4-mini">o4-mini</SelectItem>
+        <SelectItem value="o3-mini">o3-mini</SelectItem>
+        <SelectItem value="o1">o1</SelectItem>
+      </SelectGroup>
+      <SelectSeparator />
+      <SelectGroup>
+        <SelectLabel>GPT-4 Series</SelectLabel>
+        <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+        <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+        <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
+        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+        <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+        <SelectItem value="gpt-4">GPT-4</SelectItem>
+      </SelectGroup>
+    </>
+  );
+}
+
+function CodingModelSelectContent() {
+  return (
+    <>
+      <SelectGroup>
+        <SelectLabel>Codex (Optimised for Code)</SelectLabel>
+        <SelectItem value="gpt-5.3-codex">GPT-5.3 Codex</SelectItem>
+        <SelectItem value="gpt-5.2-codex">GPT-5.2 Codex</SelectItem>
+        <SelectItem value="gpt-5.1-codex">GPT-5.1 Codex</SelectItem>
+        <SelectItem value="gpt-5.1-codex-mini">GPT-5.1 Codex Mini</SelectItem>
+        <SelectItem value="gpt-5-codex">GPT-5 Codex</SelectItem>
+      </SelectGroup>
+      <SelectSeparator />
+      <SelectGroup>
+        <SelectLabel>GPT-5 Series</SelectLabel>
+        <SelectItem value="gpt-5.4">GPT-5.4</SelectItem>
+        <SelectItem value="gpt-5.4-pro">GPT-5.4 Pro</SelectItem>
+        <SelectItem value="gpt-5.2">GPT-5.2</SelectItem>
+        <SelectItem value="gpt-5.2-pro">GPT-5.2 Pro</SelectItem>
+        <SelectItem value="gpt-5.1">GPT-5.1</SelectItem>
+        <SelectItem value="gpt-5">GPT-5</SelectItem>
+        <SelectItem value="gpt-5-pro">GPT-5 Pro</SelectItem>
+        <SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
+        <SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
+      </SelectGroup>
+      <SelectSeparator />
+      <SelectGroup>
+        <SelectLabel>Reasoning</SelectLabel>
+        <SelectItem value="o3-pro">o3-pro</SelectItem>
+        <SelectItem value="o3">o3</SelectItem>
+        <SelectItem value="o4-mini">o4-mini</SelectItem>
+        <SelectItem value="o3-mini">o3-mini</SelectItem>
+        <SelectItem value="o1">o1</SelectItem>
+      </SelectGroup>
+      <SelectSeparator />
+      <SelectGroup>
+        <SelectLabel>GPT-4 Series</SelectLabel>
+        <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+        <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+        <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
+        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+        <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+        <SelectItem value="gpt-4">GPT-4</SelectItem>
+      </SelectGroup>
+    </>
+  );
+}
 
 export function SettingsDialog({
   open,
@@ -33,7 +134,8 @@ export function SettingsDialog({
   onSaved,
 }: SettingsDialogProps) {
   const [openAiApiKey, setOpenAiApiKey] = useState("");
-  const [llmModel, setLlmModel] = useState("gpt-4");
+  const [analysisLlmModel, setAnalysisLlmModel] = useState("gpt-4o");
+  const [codingLlmModel, setCodingLlmModel] = useState("gpt-5.3-codex");
   const [settingsItemId, setSettingsItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,9 +150,17 @@ export function SettingsDialog({
         setSettingsItemId(item.itemId);
         const fields = item.fields?.nodes ?? [];
         const apiKeyField = fields.find((f) => f.name === "OpenAI API Key");
-        const modelField = fields.find((f) => f.name === "LLM Model");
+        const analysisModelField = fields.find(
+          (f) => f.name === "Analysis LLM Model",
+        );
+        const codingModelField = fields.find(
+          (f) => f.name === "Coding LLM Model",
+        );
         if (apiKeyField) setOpenAiApiKey(apiKeyField.value);
-        if (modelField) setLlmModel(modelField.value || "gpt-4");
+        if (analysisModelField)
+          setAnalysisLlmModel(analysisModelField.value || "gpt-4o");
+        if (codingModelField)
+          setCodingLlmModel(codingModelField.value || "gpt-5.3-codex");
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load settings");
@@ -72,9 +182,10 @@ export function SettingsDialog({
     try {
       await authoringService.updateItemFields(settingsItemId, "en", [
         { name: "OpenAI API Key", value: openAiApiKey },
-        { name: "LLM Model", value: llmModel },
+        { name: "Analysis LLM Model", value: analysisLlmModel },
+        { name: "Coding LLM Model", value: codingLlmModel },
       ]);
-      onSaved?.({ openAiApiKey, llmModel });
+      onSaved?.({ openAiApiKey, analysisLlmModel, codingLlmModel });
       onOpenChange(false);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to save settings");
@@ -126,16 +237,38 @@ export function SettingsDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="llm-model">LLM Model</Label>
-              <Input
-                id="llm-model"
-                type="text"
-                placeholder="gpt-4"
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-              />
+              <Label htmlFor="analysis-llm-model">Analysis LLM Model</Label>
+              <Select
+                value={analysisLlmModel}
+                onValueChange={setAnalysisLlmModel}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <AnalysisModelSelectContent />
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
-                The OpenAI model to use (e.g. gpt-4, gpt-4o, gpt-3.5-turbo).
+                The model used for screenshot and HTML analysis.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="coding-llm-model">Coding LLM Model</Label>
+              <Select
+                value={codingLlmModel}
+                onValueChange={setCodingLlmModel}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <CodingModelSelectContent />
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The model used for component code generation.
               </p>
             </div>
           </div>
