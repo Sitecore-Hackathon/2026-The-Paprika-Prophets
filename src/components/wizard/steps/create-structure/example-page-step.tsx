@@ -15,16 +15,29 @@ import { Label } from "@/components/ui/label";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
 import { createPage, addComponentOnPage, updateComponentContent } from "@/lib/services/agent-service";
+import type { AuthoringService } from "@/lib/services/authoring-service";
 import { generateDummyFieldValue } from "@/lib/dummy-fields";
-import type { AnalyzedComponent } from "@/lib/types/component";
-import { DEV_COMPONENTS } from "./dev-data";
+import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
+import type { ItemResult } from "./structure-context";
+import { DEV_COMPONENTS, DEV_GROUPS } from "./dev-data";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
+import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
+
+/* ── Constants ─────────────────────────────────────────────────────── */
+
+const CHILD_ITEM_COUNT = 3;
+/** Field types that hold pipe-separated item IDs (multivalue references). */
+const MULTIVALUE_FIELD_TYPES = new Set(["Treelist", "Multilist"]);
+
+/* ── Types ──────────────────────────────────────────────────────────── */
 
 type ComponentPlacement = {
   componentName: string;
   componentId: string | null;
   datasourceId: string | null;
+  /** IDs of child items created under the parent datasource (list components only). */
+  childIds: string[];
   error: string | null;
 };
 
@@ -33,13 +46,67 @@ type PageResult = {
   placements: ComponentPlacement[];
 };
 
+/* ── Helpers ────────────────────────────────────────────────────────── */
+
+/**
+ * Creates CHILD_ITEM_COUNT child items under parentDatasourceId,
+ * populates each with dummy field values, then writes their IDs
+ * to the parent's multivalue reference field.
+ * Returns the array of created child item IDs.
+ */
+async function createChildItems(
+  svc: AuthoringService,
+  client: ClientSDK,
+  sitecoreContextId: string,
+  parentDatasourceId: string,
+  parentComp: AnalyzedComponent,
+  childComp: AnalyzedComponent,
+  childTemplateId: string,
+  language: string,
+): Promise<string[]> {
+  const childIds: string[] = [];
+
+  for (let i = 0; i < CHILD_ITEM_COUNT; i++) {
+    const item = await svc.createItem({
+      name: `${childComp.componentName} ${i + 1}`,
+      templateId: childTemplateId,
+      parentId: parentDatasourceId,
+      parentPath: "",
+      language,
+    });
+    if (!item?.itemId) throw new Error(`Child item ${i + 1} returned no ID`);
+    childIds.push(item.itemId);
+
+    const dummyFields = Object.fromEntries(
+      childComp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, language)]),
+    );
+    await updateComponentContent(client, sitecoreContextId, item.itemId, dummyFields, language);
+  }
+
+  // Write created child IDs to the parent datasource's multivalue reference field
+  const refField = parentComp.fields.find((f) => MULTIVALUE_FIELD_TYPES.has(f.type));
+  if (refField && childIds.length > 0) {
+    await updateComponentContent(
+      client,
+      sitecoreContextId,
+      parentDatasourceId,
+      { [refField.name]: childIds.join("|") },
+      language,
+    );
+  }
+
+  return childIds;
+}
+
+/* ── Component ──────────────────────────────────────────────────────── */
+
 export function ExamplePageStep() {
   const { data } = useWizard();
   const { siteDetails, siteSettings } = useSiteContext();
   const client = useMarketplaceClient();
   const { selectedTenant } = useTenantContext();
   const sitecoreContextId = selectedTenant?.context?.preview ?? "";
-  const { authoringService, rendering, setPage } = useStructure();
+  const { authoringService, template, rendering, page, setPage } = useStructure();
 
   const components = useMemo<AnalyzedComponent[]>(
     () =>
@@ -49,13 +116,15 @@ export function ExamplePageStep() {
     [data.editedComponents],
   );
 
-  const renderableComponents = useMemo(
-    () => components.filter((c) => !c.isDatasourceFolder),
-    [components],
+  const groups = useMemo<TemplateGroup[]>(
+    () =>
+      (data.templateGroups as TemplateGroup[])?.length
+        ? (data.templateGroups as TemplateGroup[])
+        : DEV_GROUPS,
+    [data.templateGroups],
   );
 
   const defaultPageLocation = siteDetails?.page_locations?.[0] ?? null;
-
   const routeTemplate = siteSettings?.routeBaseTemplateItem ?? null;
   const defaultTemplateId = siteSettings?.RouteBaseTemplate ?? "";
 
@@ -71,9 +140,7 @@ export function ExamplePageStep() {
   );
   const [templateId, setTemplateId] = useState(defaultTemplateId);
   const [selectedTemplateItem, setSelectedTemplateItem] = useState<SelectedTreeItem | null>(
-    routeTemplate
-      ? { itemId: defaultTemplateId, name: routeTemplate.name, path: routeTemplate.path }
-      : null,
+    routeTemplate ?? null,
   );
   const [pageName, setPageName] = useState(`${components[0]?.componentName || "Example"}`);
   const [placeholder, setPlaceholder] = useState("headless-main");
@@ -82,10 +149,7 @@ export function ExamplePageStep() {
   const [result, setResult] = useState<PageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Preflight: resolve unique page name (debounced)
   const [debouncedPageName, setDebouncedPageName] = useState(pageName);
-  const [preflightKey, setPreflightKey] = useState(0);
-
   useEffect(() => {
     const id = setTimeout(() => setDebouncedPageName(pageName), 400);
     return () => clearTimeout(id);
@@ -96,15 +160,9 @@ export function ExamplePageStep() {
     () => (preflightInputName ? [preflightInputName] : []),
     [preflightInputName],
   );
-  const { preflightNames, preflightLoading } = usePreflightNames(parentId, preflightInputNames, authoringService, preflightKey);
+  const { preflightNames, preflightLoading } = usePreflightNames(parentId, preflightInputNames, authoringService);
   const preflightName = preflightInputName ? (preflightNames?.[preflightInputName] ?? null) : null;
   const isRenamed = preflightName !== null && preflightName !== preflightInputName;
-
-  const handleRetry = useCallback(() => {
-    setResult(null);
-    setError(null);
-    setPreflightKey((k) => k + 1);
-  }, []);
 
   const handleCreate = useCallback(async () => {
     if (!parentId.trim() || !templateId.trim()) {
@@ -118,36 +176,53 @@ export function ExamplePageStep() {
 
     setRunning(true);
     setError(null);
-    setResult(null);
     setPage((prev) => ({ ...prev, state: { ...prev.state, status: "running", error: null } }));
 
     const resolvedName = preflightName ?? (preflightInputName || pageName.trim());
+    const lang = language || "en";
 
-    // 1. Create the page
+    // On retry: reuse the already-created page
+    const existingPageId = page.state.createdIds[0] ?? null;
     let pageId: string;
-    try {
-      const pageResponse = await createPage(client, sitecoreContextId, {
-        parentId,
-        templateId,
-        name: resolvedName,
-        language: language || "en",
-      });
-      pageId = pageResponse.itemId;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Page creation failed";
-      setError(msg);
-      setPage({ state: { status: "error", createdIds: [], error: msg }, results: [] });
-      setRunning(false);
-      return;
+
+    if (existingPageId) {
+      pageId = existingPageId;
+    } else {
+      setResult(null);
+      try {
+        const pageResponse = await createPage(client, sitecoreContextId, {
+          parentId,
+          templateId,
+          name: resolvedName,
+          language: lang,
+        });
+        pageId = pageResponse.itemId;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Page creation failed";
+        setError(msg);
+        setPage({ state: { status: "error", createdIds: [], error: msg }, results: [] });
+        setRunning(false);
+        return;
+      }
     }
 
-    // 2. Add each component and update its datasource content
-    const placements: ComponentPlacement[] = [];
+    // On retry: carry over successful placements
+    const previousPlacements = result?.placements ?? [];
+    const partialPlacements: ComponentPlacement[] = previousPlacements.filter((p) => p.error === null);
+    const alreadyPlaced = new Set(partialPlacements.map((p) => p.componentName));
 
-    for (const comp of renderableComponents) {
-      const renderingItemId = rendering.results.find((r) => r.originalName === comp.componentName)?.id;
-      if (!renderingItemId) {
-        placements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, error: "Rendering item not found" });
+    // Iterate only renderings that were actually created (parent + standalone roles only)
+    const pendingRenderings = rendering.results.filter((r) => !alreadyPlaced.has(r.originalName));
+
+    setResult({ pageId, placements: [...partialPlacements] });
+
+    for (const renderingResult of pendingRenderings) {
+      const comp = components.find((c) => c.componentName === renderingResult.originalName);
+      if (!comp) continue;
+
+      if (!renderingResult.id) {
+        partialPlacements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, childIds: [], error: "Rendering item was not created" });
+        setResult({ pageId, placements: [...partialPlacements] });
         continue;
       }
 
@@ -157,38 +232,70 @@ export function ExamplePageStep() {
       try {
         const addResponse = await addComponentOnPage(client, sitecoreContextId, {
           pageId,
-          componentRenderingId: renderingItemId,
+          componentRenderingId: renderingResult.id,
           placeholderPath: placeholder,
-          componentItemName: `${comp.componentName}`,
-          language: language || "en",
+          componentItemName: comp.componentName,
+          language: lang,
         });
         componentId = addResponse.componentId;
         datasourceId = addResponse.datasourceId ?? null;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Add component failed";
-        placements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, error: msg });
+        partialPlacements.push({ componentName: comp.componentName, componentId: null, datasourceId: null, childIds: [], error: msg });
+        setResult({ pageId, placements: [...partialPlacements] });
         continue;
       }
 
-      // 3. Update datasource content with generated dummy field values
+      // Populate parent datasource with dummy field values
       if (datasourceId) {
         const initialFields = Object.fromEntries(
-          comp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, language || "en")]),
+          comp.fields.map((f) => [f.name, generateDummyFieldValue(f.type, lang)]),
         );
         try {
-          await updateComponentContent(client, sitecoreContextId, datasourceId, initialFields);
+          await updateComponentContent(client, sitecoreContextId, datasourceId, initialFields, lang);
         } catch {
-          // Non-fatal: component was added, content update failed
-          placements.push({ componentName: comp.componentName, componentId, datasourceId, error: "Component added but content update failed" });
+          partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds: [], error: "Component added but content update failed" });
+          setResult({ pageId, placements: [...partialPlacements] });
           continue;
         }
       }
 
-      placements.push({ componentName: comp.componentName, componentId, datasourceId, error: null });
+      // For list groups: create child items and link them to the parent datasource
+      let childIds: string[] = [];
+      if (renderingResult.role === "parent" && datasourceId) {
+        const group = groups.find((g) => g.id === renderingResult.groupId);
+        const childMemberIdx = group?.members.find((m) => m.role === "child")?.idx;
+        const childComp = childMemberIdx !== undefined ? components[childMemberIdx] : null;
+        const childTemplateResult: ItemResult | undefined = template.results.find(
+          (t) => t.groupId === renderingResult.groupId && t.role === "child",
+        );
+
+        if (group && childComp && childTemplateResult?.id) {
+          try {
+            childIds = await createChildItems(
+              authoringService,
+              client,
+              sitecoreContextId,
+              datasourceId,
+              comp,
+              childComp,
+              childTemplateResult.id,
+              lang,
+            );
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : "Child item creation failed";
+            partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds: [], error: msg });
+            setResult({ pageId, placements: [...partialPlacements] });
+            continue;
+          }
+        }
+      }
+
+      partialPlacements.push({ componentName: comp.componentName, componentId, datasourceId, childIds, error: null });
+      setResult({ pageId, placements: [...partialPlacements] });
     }
 
-    const placementErrors = placements.some((p) => p.error);
-    setResult({ pageId, placements });
+    const placementErrors = partialPlacements.some((p) => p.error);
     setPage({
       state: {
         status: placementErrors ? "error" : "done",
@@ -198,7 +305,25 @@ export function ExamplePageStep() {
       results: [],
     });
     setRunning(false);
-  }, [parentId, templateId, pageName, debouncedPageName, preflightName, placeholder, language, renderableComponents, rendering, client, sitecoreContextId, setPage]);
+  }, [
+    parentId,
+    templateId,
+    pageName,
+    debouncedPageName,
+    preflightName,
+    placeholder,
+    language,
+    groups,
+    components,
+    rendering,
+    template.results,
+    page.state.createdIds,
+    result,
+    client,
+    sitecoreContextId,
+    authoringService,
+    setPage,
+  ]);
 
   const isUnlocked = rendering.state.status === "done";
   const canRun = isUnlocked && !!parentId.trim() && !!templateId.trim() && !running && !preflightLoading;
@@ -213,6 +338,7 @@ export function ExamplePageStep() {
         id="page-parent-id"
         label="Page Location"
         hint="Sitecore folder where the example page will be created."
+        required
         value={parentId}
         selectedItem={selectedTreeItem}
         onChange={(id) => { setParentId(id); setSelectedTreeItem(null); }}
@@ -223,6 +349,7 @@ export function ExamplePageStep() {
         id="page-template-id"
         label="Page Template"
         hint="Sitecore template used to create the example page."
+        required
         value={templateId}
         selectedItem={selectedTemplateItem}
         onChange={(id) => { setTemplateId(id); setSelectedTemplateItem(null); }}
@@ -232,18 +359,24 @@ export function ExamplePageStep() {
       {isUnlocked && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="page-name">Page name</Label>
+            <Label htmlFor="page-name">
+              Page name<span className="text-destructive ml-0.5">*</span>
+            </Label>
             <Input
               id="page-name"
+              required
               value={pageName}
               onChange={(e) => setPageName(e.target.value)}
               placeholder="Example page name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="placeholder">Placeholder</Label>
+            <Label htmlFor="placeholder">
+              Placeholder<span className="text-destructive ml-0.5">*</span>
+            </Label>
             <Input
               id="placeholder"
+              required
               value={placeholder}
               onChange={(e) => setPlaceholder(e.target.value)}
               placeholder="headless-main"
@@ -251,9 +384,12 @@ export function ExamplePageStep() {
             <p className="text-xs text-muted-foreground">Placeholder key where components will be inserted.</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language">
+              Language<span className="text-destructive ml-0.5">*</span>
+            </Label>
             <Input
               id="language"
+              required
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               placeholder="en"
@@ -289,7 +425,7 @@ export function ExamplePageStep() {
       )}
 
       {hasPlacementErrors && (
-        <Button variant="outline" onClick={handleRetry} disabled={running} className="w-full">
+        <Button variant="outline" onClick={handleCreate} disabled={running} className="w-full">
           Retry
         </Button>
       )}
@@ -297,36 +433,37 @@ export function ExamplePageStep() {
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Badge colorScheme="success" size="sm">created</Badge>
-              Example page
-            </CardTitle>
+            <CardTitle className="text-sm">Results</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div>
-              <span className="text-muted-foreground">Page ID: </span>
-              <code className="font-mono text-xs">{result.pageId}</code>
+          <CardContent className="space-y-1.5">
+            <div className="flex items-center gap-2 text-sm">
+              <Badge colorScheme="success" size="sm">created</Badge>
+              <span className="font-medium">Example page</span>
+              <span className="text-xs text-muted-foreground font-mono">{result.pageId}</span>
             </div>
-            {result.placements.length > 0 && (
-              <div className="space-y-1.5 pt-1 border-t">
-                {result.placements.map((p) => (
-                  <div key={p.componentName} className="flex items-start gap-2">
-                    <Badge colorScheme={p.error ? "danger" : "success"} size="sm" className="mt-0.5 shrink-0">
-                      {p.error ? "error" : "placed"}
-                    </Badge>
-                    <div className="min-w-0">
-                      <span className="font-medium">{p.componentName}</span>
-                      {p.datasourceId && (
-                        <div className="text-xs text-muted-foreground font-mono truncate">{p.datasourceId}</div>
-                      )}
-                      {p.error && (
-                        <div className="text-xs text-destructive">{p.error}</div>
-                      )}
-                    </div>
+            {result.placements.map((p) => (
+              <div key={p.componentName} className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-2 text-sm">
+                  <Badge colorScheme={p.error ? "danger" : "success"} size="sm">
+                    {p.error ? "error" : "placed"}
+                  </Badge>
+                  <span className="font-medium">{p.componentName}</span>
+                  {p.datasourceId && (
+                    <span className="text-xs text-muted-foreground font-mono truncate">{p.datasourceId}</span>
+                  )}
+                  {p.error && (
+                    <span className="text-xs text-destructive">{p.error}</span>
+                  )}
+                </div>
+                {p.childIds.length > 0 && (
+                  <div className="ml-6 flex flex-wrap gap-1">
+                    {p.childIds.map((id) => (
+                      <span key={id} className="text-xs text-muted-foreground font-mono">{id}</span>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            ))}
           </CardContent>
         </Card>
       )}

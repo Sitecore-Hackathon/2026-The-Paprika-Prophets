@@ -31,6 +31,7 @@ export interface SitecoreTemplate {
   templateId: string;
   name: string;
   path?: string;
+  standardValuesItem?: { itemId: string };
   ownFields?: {
     nodes: Array<{
       name: string;
@@ -67,7 +68,10 @@ export interface TemplateConfig {
   name: string;
   parentId: string;
   parentPath: string;
+  language?: string;
   sections: SectionConfig[];
+  baseTemplateIds?: string[];
+  createStandardValuesItem?: boolean;
 }
 
 export interface ItemConfig {

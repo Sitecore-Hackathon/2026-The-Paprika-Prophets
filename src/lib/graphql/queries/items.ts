@@ -1,14 +1,14 @@
 export const buildGetItemQuery = (path: string, database: string = "master") => `
   query {
     item(where: { database: "${database}", path: "${path}" }) {
-      itemId
+      itemId(format: B)
       name
       path
       children {
         nodes {
           name
           path
-          itemId
+          itemId(format: B)
         }
       }
     }
@@ -18,7 +18,7 @@ export const buildGetItemQuery = (path: string, database: string = "master") => 
 export const buildGetItemByIdQuery = (itemId: string, database: string = "master") => `
   query {
     item(where: { database: "${database}", itemId: "${itemId}" }) {
-      itemId
+      itemId(format: B)
       name
       path
     }
@@ -30,7 +30,7 @@ export const buildGetChildrenByIdQuery = (itemId: string, database: string = "ma
     item(where: { database: "${database}", itemId: "${itemId}" }) {
       children {
         nodes {
-          itemId
+          itemId(format: B)
           name
           path
         }
@@ -45,7 +45,7 @@ export const buildGetItemWithFieldsQuery = (
 ) => `
   query {
     item(where: { database: "${database}", path: "${path}" }) {
-      itemId
+      itemId(format: B)
       name
       path
       fields(excludeStandardFields: true) {
@@ -76,7 +76,7 @@ export const buildSearchItemsQuery = (
       results {
         items {
           item {
-            itemId
+            itemId(format: B)
             name
             path
           }

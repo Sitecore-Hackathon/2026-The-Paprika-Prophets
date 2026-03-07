@@ -21,6 +21,8 @@ export type SubStepState = {
 };
 
 export type ItemResult = {
+  groupId: string;
+  role: "parent" | "child" | "folder" | "standalone";
   originalName: string;
   resolvedName: string;
   path: string | null;

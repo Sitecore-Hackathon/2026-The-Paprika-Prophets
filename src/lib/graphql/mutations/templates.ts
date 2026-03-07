@@ -22,10 +22,17 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
     .filter(Boolean)
     .join("\n      ");
 
-  const sectionsContent = sectionsBlock || `{
-        name: "Data"
-        fields: []
-      }`;
+  const sectionsContent = sectionsBlock ?? "";
+
+  const language = config.language ?? "en";
+  const baseTemplatesBlock =
+    config.baseTemplateIds?.length
+      ? `baseTemplates: [${config.baseTemplateIds.map((id) => `"${id}"`).join(", ")}]`
+      : "";
+  const createStandardValuesItem =
+    config.createStandardValuesItem !== undefined
+      ? `createStandardValuesItem: ${config.createStandardValuesItem}`
+      : "";
 
   return `
     mutation {
@@ -33,6 +40,9 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
         input: {
           name: "${config.name}"
           parent: "${config.parentId}"
+          language: "${language}"
+          ${createStandardValuesItem}
+          ${baseTemplatesBlock}
           sections: [
             ${sectionsContent}
           ]
@@ -41,6 +51,9 @@ export const buildCreateTemplateMutation = (config: TemplateConfig) => {
         itemTemplate {
           name
           templateId
+          standardValuesItem(language: "${language}") {
+            itemId
+          }
           ownFields {
             nodes {
               name

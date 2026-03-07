@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useState } from "react";
 import { useWizard } from "@/components/wizard/wizard-context";
@@ -8,9 +8,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ItemPickerInput } from "@/components/wizard/item-picker-input";
 import type { SelectedTreeItem } from "@/components/wizard/site-tree";
-import type { AnalyzedComponent } from "@/lib/types/component";
+import type { AnalyzedComponent, TemplateGroup } from "@/lib/types/component";
 import type { ItemConfig } from "@/lib/graphql/types";
-import { DEV_COMPONENTS } from "./dev-data";
+import { DEV_COMPONENTS, DEV_GROUPS } from "./dev-data";
 import { usePreflightNames } from "./use-preflight-names";
 import { NameConflictAlert } from "./name-conflict-alert";
 import { StepResultsCard } from "./step-results-card";
@@ -21,7 +21,7 @@ const JSON_RENDERING_TEMPLATE_ID = "{04646A89-996F-4EE7-878A-FFDBF1F0EF0D}";
 export function RenderingStep() {
   const { data } = useWizard();
   const { siteSettings } = useSiteContext();
-  const { authoringService, template, setRendering, advanceSubStep } = useStructure();
+  const { authoringService, template, rendering, setRendering, advanceSubStep } = useStructure();
 
   const components = useMemo<AnalyzedComponent[]>(
     () =>
@@ -31,18 +31,36 @@ export function RenderingStep() {
     [data.editedComponents],
   );
 
-  const renderableComponents = useMemo(
-    () => components.filter((c) => !c.isDatasourceFolder),
-    [components],
+  const groups = useMemo<TemplateGroup[]>(
+    () =>
+      (data.templateGroups as TemplateGroup[])?.length
+        ? (data.templateGroups as TemplateGroup[])
+        : DEV_GROUPS,
+    [data.templateGroups],
   );
 
-  const componentNames = useMemo(() => renderableComponents.map((c) => c.componentName), [renderableComponents]);
+  // For renderings, only the primary member per group (standalone or parent)
+  const renderableMembers = useMemo(
+    () =>
+      groups.flatMap((group) => {
+        const primaryRole = group.type === "list" ? "parent" : "standalone";
+        const member = group.members.find((m) => m.role === primaryRole);
+        if (!member) return [];
+        const comp = components[member.idx];
+        if (!comp) return [];
+        return [{ group, member, comp }];
+      }),
+    [groups, components],
+  );
+
+  const componentNames = useMemo(
+    () => renderableMembers.map((item) => item.comp.componentName),
+    [renderableMembers],
+  );
 
   const [parentId, setParentId] = useState(siteSettings?.RenderingsPath ?? "");
   const [selectedTreeItem, setSelectedTreeItem] = useState<SelectedTreeItem | null>(
-    siteSettings?.renderingsItem
-      ? { itemId: siteSettings.renderingsItem.itemId, name: siteSettings.renderingsItem.name, path: siteSettings.renderingsItem.path }
-      : null,
+    siteSettings?.renderingsItem ?? null,
   );
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<ItemResult[]>([]);
@@ -50,20 +68,37 @@ export function RenderingStep() {
 
   const { preflightNames, preflightLoading } = usePreflightNames(parentId, componentNames, authoringService);
 
-  const renamedComponents = preflightNames
-    ? renderableComponents.filter((c) => preflightNames[c.componentName] !== c.componentName)
+  const renamedItems = preflightNames
+    ? renderableMembers
+        .filter((item) => preflightNames[item.comp.componentName] !== item.comp.componentName)
+        .map((item) => ({
+          original: item.comp.componentName,
+          resolved: preflightNames[item.comp.componentName],
+        }))
     : [];
 
   const handleCreate = useCallback(async () => {
     setRunning(true);
     setGlobalError(null);
-    setResults([]);
     setRendering((prev) => ({ ...prev, state: { ...prev.state, status: "running", error: null } }));
 
-    const partial: ItemResult[] = [];
+    // On retry: carry over results that already succeeded so we don't duplicate them
+    const previousResults = rendering.results;
+    const partial: ItemResult[] = previousResults.filter((r) => r.id !== null);
+    const alreadyDone = new Set(partial.map((r) => r.originalName));
 
-    for (const comp of renderableComponents) {
+    setResults([...partial]);
+
+    for (const { group, member, comp } of renderableMembers) {
+      if (alreadyDone.has(comp.componentName)) continue;
+
       const resolvedName = preflightNames?.[comp.componentName] ?? comp.componentName;
+
+      // Find the matching template result for this group's primary member
+      const templateResult = template.results.find(
+        (t) => t.groupId === group.id && (t.role === "standalone" || t.role === "parent"),
+      );
+
       const config: ItemConfig = {
         name: resolvedName,
         templateId: JSON_RENDERING_TEMPLATE_ID,
@@ -72,20 +107,33 @@ export function RenderingStep() {
         language: "en",
         fields: [
           { name: "ComponentName", value: comp.componentName },
-          {
-            name: "Datasource Template",
-            value: template.results.find((t) => t.originalName === comp.componentName)?.path ?? "",
-          },
+          { name: "Datasource Template", value: templateResult?.path ?? "" },
         ],
       };
 
       try {
         const item = await authoringService.createItem(config);
         if (!item) throw new Error("No item returned");
-        partial.push({ originalName: comp.componentName, resolvedName, path: item.path, id: item.itemId, error: null });
+        partial.push({
+          groupId: group.id,
+          role: member.role,
+          originalName: comp.componentName,
+          resolvedName,
+          path: item.path,
+          id: item.itemId,
+          error: null,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Creation failed";
-        partial.push({ originalName: comp.componentName, resolvedName, path: null, id: null, error: msg });
+        partial.push({
+          groupId: group.id,
+          role: member.role,
+          originalName: comp.componentName,
+          resolvedName,
+          path: null,
+          id: null,
+          error: msg,
+        });
       }
 
       setResults([...partial]);
@@ -106,18 +154,28 @@ export function RenderingStep() {
     }
 
     setRunning(false);
-  }, [parentId, preflightNames, renderableComponents, authoringService, selectedTreeItem, advanceSubStep]);
+  }, [
+    parentId,
+    selectedTreeItem,
+    preflightNames,
+    renderableMembers,
+    authoringService,
+    rendering.results,
+    template.results,
+    advanceSubStep,
+    setRendering,
+  ]);
 
   const isUnlocked = template.state.status === "done";
   const canRun = isUnlocked && !!parentId.trim() && !running && !preflightLoading;
 
   const buttonLabel = running
-    ? "Creating renderings…"
+    ? "Creating renderings"
     : preflightLoading
-      ? "Checking names…"
+      ? "Checking names"
       : results.length > 0
         ? "Retry"
-        : `Create ${renderableComponents.length} Rendering(s)`;
+        : `Create ${renderableMembers.length} Rendering(s)`;
 
   return (
     <div className="space-y-4">
@@ -125,6 +183,7 @@ export function RenderingStep() {
         id="renderings-parent-id"
         label="Renderings Folder"
         hint="Sitecore folder where JSON rendering items will be created."
+        required
         value={parentId}
         selectedItem={selectedTreeItem}
         onChange={(id) => {
@@ -137,9 +196,7 @@ export function RenderingStep() {
         }}
       />
 
-      <NameConflictAlert
-        items={renamedComponents.map((c) => ({ original: c.componentName, resolved: preflightNames![c.componentName] }))}
-      />
+      <NameConflictAlert items={renamedItems} />
 
       {!isUnlocked && (
         <Alert>

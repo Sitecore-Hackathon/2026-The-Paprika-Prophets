@@ -28,6 +28,7 @@ type ItemPickerInputProps = {
   label: string;
   hint?: string;
   placeholder?: string;
+  required?: boolean;
   value: string;
   selectedItem: SelectedTreeItem | null;
   onChange: (id: string) => void;
@@ -39,6 +40,7 @@ export function ItemPickerInput({
   label,
   hint,
   placeholder = "{00000000-0000-0000-0000-000000000000}",
+  required,
   value,
   selectedItem,
   onChange,
@@ -48,10 +50,14 @@ export function ItemPickerInput({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
       <div className="flex gap-2">
         <Input
           id={id}
+          required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

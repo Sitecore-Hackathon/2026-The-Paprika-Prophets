@@ -46,6 +46,11 @@ function dataUrlToBlob(dataUrl: string): Blob {
 
 // Types imported from @/lib/types/component
 
+
+
+/** A group of related templates: parent list + child + folder, or standalone */
+// TemplateGroup is imported from @/lib/types/component
+
 /* ── Constants ────────────────────────────────────────────────────── */
 
 const SITECORE_FIELD_TYPES = [
@@ -101,7 +106,7 @@ function normalizeComponents(raw: Record<string, unknown>): AnalyzedComponent[] 
     if (comp.isListComponent && comp.childTemplateName) {
       for (const field of comp.fields) {
         if (REFERENCE_FIELD_TYPES.has(field.type) && !field.source) {
-          field.source = `$site/Data/${comp.childTemplateName}s`;
+          field.source = `query:./*`;
         }
       }
     }
